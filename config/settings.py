@@ -62,7 +62,24 @@ ASGI_APPLICATION = "config.asgi.application"
 
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
-    parsed_database_url = urlparse(database_url)
+    try:
+        parsed_database_url = urlparse(database_url)
+        database_hostname = parsed_database_url.hostname
+    except (ValueError, UnicodeError):
+        raise RuntimeError(
+            "DATABASE_URL is malformed. In Render, copy the database's Internal Database URL into DATABASE_URL "
+            "as-is. Do not split it across DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, or DB_PORT."
+        ) from None
+    if parsed_database_url.scheme not in {"postgres", "postgresql"} or not database_hostname:
+        raise RuntimeError(
+            "DATABASE_URL must be Render's PostgreSQL Internal Database URL. "
+            "Do not put the URL in DB_HOST; remove DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, and DB_PORT overrides."
+        )
+    if len(database_hostname) > 253 or any(len(label) > 63 for label in database_hostname.split(".")):
+        raise RuntimeError(
+            "DATABASE_URL has an invalid host (over 253 characters). In Render, set it from the database's "
+            "Internal Database URL; remove any manually copied value from DB_HOST."
+        )
     database_options = parse_qs(parsed_database_url.query)
     DATABASES = {
         "default": {
@@ -77,13 +94,19 @@ if database_url:
         }
     }
 else:
+    db_host = os.environ.get("DB_HOST", "127.0.0.1")
+    if "://" in db_host or len(db_host) > 253:
+        raise RuntimeError(
+            "DB_HOST must contain only a PostgreSQL hostname, not a connection URL. "
+            "For Render managed Postgres, set DATABASE_URL to the Internal Database URL and remove DB_HOST."
+        )
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": os.environ.get("DB_NAME", "tivoli_erp_demo"),
             "USER": os.environ.get("DB_USER", os.environ.get("USER", "postgres")),
             "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-            "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
+            "HOST": db_host,
             "PORT": os.environ.get("DB_PORT", "55432"),
             "CONN_MAX_AGE": 0,
         }
