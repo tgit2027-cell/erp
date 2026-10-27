@@ -1,0 +1,36 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments and installed dependencies
+.venv/
+.pythonlibs/
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.runtime/
+coverage/
+*.log
+*.tsbuildinfo
+/generated-artifacts/
+/media/
+/backups/
+.env.docker
+
+# Local credentials and generated deployment artifacts
+*.pem
+*.key
+*.p12
+*.pfx
+/secrets/
+/render-build/
+

@@ -1,0 +1,56 @@
+"""Choice metadata only; preserve existing Favorites and permissions."""
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+    dependencies = [("foundation", "0019_alter_userfavorite_destination")]
+    operations = [
+        migrations.AlterField(
+            model_name="userfavorite", name="destination",
+            field=models.CharField(max_length=32, choices=[
+                ("dashboard", "Overview"),
+                ("retail", "Retail & Sales"),
+                ("procurement", "Procurement & Imports"),
+                ("inventory", "Inventory & Warehouses"),
+                ("delivery", "Delivery & After-Sales"),
+                ("finance", "Finance & Accounting"),
+                ("hr", "HR & Payroll"),
+                ("governance", "Governance & Administration"),
+                ("reports", "Reporting & Dashboards"),
+                ("purchasing", "Purchasing Workbench"),
+                ("retail.quote", "Retail · Create a quote"),
+                ("retail.actions", "Retail · Quote collection & holds"),
+                ("retail.register", "Retail · Authorized quote register"),
+                ("retail.collections", "Retail · Collection follow-up"),
+                ("procurement.commitments", "Procurement · Create purchase commitment"),
+                ("procurement.progress", "Procurement · Commitment receipt progress"),
+                ("procurement.receipt", "Procurement · Prepare imported-goods receipt"),
+                ("procurement.packing", "Procurement · Packing-list mapping & review"),
+                ("procurement.registers", "Procurement · Receipt & landed-charge registers"),
+                ("procurement.suppliers", "Procurement · Staff counterparty directory"),
+                ("inventory.locations", "Inventory · Permitted locations"),
+                ("inventory.receipt", "Inventory · Prepare imported-goods receipt"),
+                ("inventory.commitments", "Inventory · Purchase commitments"),
+                ("inventory.progress", "Inventory · Commitment receipt progress"),
+                ("inventory.packing", "Inventory · Packing-list preview"),
+                ("inventory.registers", "Inventory · Inventory & transfer registers"),
+                ("inventory.capacity", "Inventory · Warehouse capacity"),
+                ("delivery.quote", "Delivery · Authorized quote lookup"),
+                ("delivery.handover", "Delivery · Readiness & handover actions"),
+                ("delivery.quotes", "Delivery · Quote register"),
+                ("delivery.storage", "Delivery · Storage-charge register"),
+                ("delivery.reservations", "Delivery · Reservation register"),
+                ("delivery.deliveries", "Delivery · Delivery register"),
+                ("delivery.returns", "Delivery · Sales-return intake"),
+                ("governance.presentation", "Governance · Business-unit palettes"),
+                ("governance.purchasing-config", "Governance · Purchasing configuration review"),
+                ("governance.reporting", "Governance · Reporting governance"),
+                ("governance.report-panels", "Governance · Manage report panels"),
+                ("governance.capacity-admin", "Governance · Capacity locations & assignments"),
+                ("governance.capacity-audit", "Governance · Warehouse capacity audit"),
+                ("purchasing.quote", "Purchasing · Quote lookup"),
+                ("purchasing.transactions", "Purchasing · Transaction workbench"),
+                ("purchasing.registers", "Purchasing · Purchasing records"),
+            ]),
+        ),
+    ]

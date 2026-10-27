@@ -1,0 +1,40 @@
+.reconciliation-lab { --rec-ink:#283633; --rec-muted:#4d6255; --rec-paper:#f2f4ed; --rec-card:#fbfcf7; --rec-accent:#b34b35; --rec-rule:#cbd4c8; color:var(--rec-ink); }
+.finance-lab .reconciliation-launch-link { display:inline-block; max-width:100%; overflow-wrap:anywhere; }
+.reconciliation-lab .finance-draft-banner { background:#dce7dc; border-left:5px solid var(--rec-accent); }
+.reconciliation-lab .finance-draft-banner h1 { max-width:15ch; font-size:clamp(2.5rem,6vw,4.5rem); letter-spacing:-.055em; }
+.reconciliation-lab a { color:#93402f; font-weight:700; text-underline-offset:.2em; }
+.reconciliation-lab .finance-draft-card,.reconciliation-lab .rec-editor { background:var(--rec-card); border:1px solid var(--rec-rule); border-radius:14px; padding:clamp(1rem,3vw,2rem); }
+.reconciliation-lab .rec-toolbar,.reconciliation-lab .rec-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.7rem; }
+.reconciliation-lab .rec-register-list { display:grid; gap:.55rem; margin:1rem 0 0; padding:0; list-style:none; }
+.reconciliation-lab .rec-register-list button { width:100%; text-align:left; }
+.reconciliation-lab .rec-editor { display:grid; gap:1.4rem; margin-top:1.3rem; }
+.reconciliation-lab .rec-editor legend { padding:0 .5rem; color:#93402f; font-weight:750; }
+.reconciliation-lab .rec-meta { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.reconciliation-lab .rec-meta h2,.reconciliation-lab .rec-meta .rec-boundary { grid-column:1/-1; }
+.reconciliation-lab label { display:grid; gap:.4rem; min-width:0; }
+.reconciliation-lab input,.reconciliation-lab select,.reconciliation-lab textarea { width:100%; min-width:0; }
+.reconciliation-lab textarea { min-height:4.8rem; resize:vertical; }
+.reconciliation-lab .rec-currency { align-self:center; padding:1rem; border-radius:9px; background:#e7eee4; }
+.reconciliation-lab .rec-currency strong { display:block; font-size:1.3rem; }
+.reconciliation-lab .rec-boundary,.reconciliation-lab .rec-formula { padding:1rem 1.2rem; border-radius:9px; background:#f0eee5; }
+.reconciliation-lab .rec-boundary p,.reconciliation-lab .rec-formula p { margin:.4rem 0; }
+.reconciliation-lab .rec-source { border-top:1px solid var(--rec-rule); padding-top:1rem; }
+.reconciliation-lab .rec-source-head { display:flex; justify-content:space-between; gap:1rem; align-items:center; }
+.reconciliation-lab .rec-row,.reconciliation-lab .rec-match { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.85rem; margin:1rem 0; padding:1rem; background:#f7f8f2; border:1px solid var(--rec-rule); border-radius:10px; }
+.reconciliation-lab .rec-row legend,.reconciliation-lab .rec-match legend { font-weight:700; }
+.reconciliation-lab .rec-row .wide { grid-column:span 2; }
+.reconciliation-lab .rec-remove { align-self:end; justify-self:start; }
+.reconciliation-lab .rec-match-alert { color:#783d2d; background:#f8eae3; padding:.75rem; border-radius:7px; }
+.reconciliation-lab .rec-math { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.6rem 1.2rem; margin:0; }
+.reconciliation-lab .rec-math div { display:flex; justify-content:space-between; gap:.5rem; border-bottom:1px solid var(--rec-rule); padding:.5rem 0; }
+.reconciliation-lab .rec-math dt { color:var(--rec-muted); }
+.reconciliation-lab .rec-math dd { margin:0; font-variant-numeric:tabular-nums; font-weight:700; }
+.reconciliation-lab .rec-validation { padding:1rem; border:1px solid #e0beb0; border-radius:8px; background:#f7e9e3; color:#6e3528; }
+.reconciliation-lab .rec-history details { border-top:1px solid var(--rec-rule); padding:.8rem 0; }
+.reconciliation-lab .rec-history summary { cursor:pointer; font-weight:700; }
+.reconciliation-lab .rec-conflict { border-left:4px solid var(--rec-accent)!important; }
+@media(max-width:720px) {
+ .reconciliation-lab .rec-meta,.reconciliation-lab .rec-row,.reconciliation-lab .rec-match,.reconciliation-lab .rec-math { grid-template-columns:1fr; }
+ .reconciliation-lab .rec-row .wide { grid-column:auto; }
+ .reconciliation-lab .rec-source-head { align-items:flex-start; flex-direction:column; }
+}

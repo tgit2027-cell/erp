@@ -1,0 +1,137 @@
+.asset-lab {
+  --asset-ink: #27352f;
+  --asset-muted: #52635a;
+  --asset-paper: #f1f2e9;
+  --asset-card: #fbfbf6;
+  --asset-line: #ccd4c7;
+  --asset-leaf: #315a45;
+  --asset-citrus: #d5e66f;
+  --asset-clay: #a94f3d;
+  min-height: 100dvh;
+  padding: clamp(.8rem, 4vw, 3.5rem);
+  color: var(--asset-ink);
+  background: var(--asset-paper);
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+}
+.asset-lab * { box-sizing: border-box; }
+.finance-lab .asset-launch-link { display: inline-block; max-width: 100%; overflow-wrap: anywhere; }
+.asset-lab .finance-draft-banner {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto 1.5rem;
+  padding: clamp(1.5rem, 4vw, 3.25rem);
+  color: #f4f2e8;
+  background: var(--asset-leaf);
+  border-radius: 3px 3px 48px 3px;
+  overflow: hidden;
+}
+.asset-lab .finance-draft-banner::after {
+  content: "QAR";
+  position: absolute;
+  right: 3%;
+  bottom: -1.15em;
+  color: rgb(255 255 255 / 6%);
+  font: 800 clamp(7rem, 19vw, 17rem)/1 "Consolas", "Courier New", monospace;
+  pointer-events: none;
+}
+.asset-lab .finance-draft-eyebrow {
+  margin: 0 0 .5rem;
+  color: var(--asset-leaf);
+  font: 500 .72rem/1.4 "Consolas", "Courier New", monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.asset-lab .finance-draft-banner .finance-draft-eyebrow { color: var(--asset-citrus); }
+.asset-lab h1, .asset-lab h2, .asset-lab h3 { margin-top: 0; }
+.asset-lab h1 {
+  max-width: 780px;
+  margin-bottom: .65rem;
+  font: 600 clamp(2.7rem, 7vw, 5.8rem)/.98 Georgia, "Times New Roman", serif;
+  letter-spacing: -.045em;
+}
+.asset-lab .finance-draft-banner > p { max-width: 700px; line-height: 1.65; }
+.asset-lab a { color: inherit; }
+.asset-lab .finance-draft-banner a { font-weight: 700; text-underline-offset: 4px; }
+.asset-lab .finance-draft-card, .asset-lab .asset-editor {
+  max-width: 1180px;
+  margin: 1rem auto;
+  padding: clamp(1rem, 2.6vw, 2rem);
+  border: 1px solid var(--asset-line);
+  background: var(--asset-card);
+  border-radius: 3px 3px 26px 3px;
+}
+.asset-lab .asset-editor { min-width: 0; }
+.asset-lab .asset-editor legend {
+  padding: 0 .6rem;
+  color: var(--asset-leaf);
+  font: 600 1.08rem Georgia, "Times New Roman", serif;
+}
+.asset-lab label { display: grid; gap: .42rem; font-size: .85rem; font-weight: 700; }
+.asset-lab input, .asset-lab select, .asset-lab textarea {
+  width: 100%;
+  min-width: 0;
+  padding: .72rem .78rem;
+  border: 1px solid #64796b;
+  border-radius: 3px;
+  color: var(--asset-ink);
+  background: #fffef9;
+  font: 500 .95rem "Trebuchet MS", "Segoe UI", sans-serif;
+}
+.asset-lab select[multiple] { min-height: 8rem; }
+.asset-lab textarea { min-height: 6rem; resize: vertical; }
+.asset-lab input:focus-visible, .asset-lab select:focus-visible, .asset-lab textarea:focus-visible,
+.asset-lab button:focus-visible, .asset-lab a:focus-visible, .asset-lab summary:focus-visible {
+  outline: 3px solid var(--asset-leaf); outline-offset: 2px;
+}
+.asset-lab .finance-draft-banner a:focus-visible { outline-color: var(--asset-citrus); outline-offset: 3px; }
+.asset-lab button {
+  min-height: 2.7rem;
+  padding: .66rem .95rem;
+  border: 1px solid var(--asset-leaf);
+  border-radius: 3px 3px 14px 3px;
+  color: #fffef8;
+  background: var(--asset-leaf);
+  font: 700 .84rem "Trebuchet MS", "Segoe UI", sans-serif;
+  cursor: pointer;
+  transition: transform .16s ease, opacity .16s ease;
+}
+.asset-lab button:hover:not(:disabled) { transform: translateY(-2px); }
+.asset-lab button:disabled { opacity: .48; cursor: not-allowed; }
+.asset-lab .asset-secondary { color: var(--asset-leaf); background: transparent; }
+.asset-lab .asset-toolbar, .asset-lab .asset-section-heading, .asset-lab .asset-actions {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem;
+}
+.asset-lab .asset-toolbar { margin: 1rem 0; }
+.asset-lab .asset-section-heading { margin-bottom: 1rem; }
+.asset-lab .asset-section-heading h2 { margin-bottom: 0; font: 600 1.8rem Georgia, serif; }
+.asset-lab .asset-register-list { display: grid; gap: .5rem; padding: 0; list-style: none; }
+.asset-lab .asset-register-list button { width: 100%; text-align: left; color: var(--asset-ink); background: transparent; }
+.asset-lab .asset-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 1.2rem 0; }
+.asset-lab .asset-wide { grid-column: 1 / -1; }
+.asset-lab .asset-currency {
+  display: flex; align-items: baseline; gap: .8rem; padding: .9rem 1rem;
+  background: #e9edda; border-left: 4px solid var(--asset-leaf);
+}
+.asset-lab .asset-currency strong { font: 500 1.2rem "Consolas", "Courier New", monospace; }
+.asset-lab .asset-boundary, .asset-lab .asset-note {
+  padding: .9rem 1rem; border-left: 4px solid var(--asset-citrus); background: #f2f3e3; line-height: 1.55;
+}
+.asset-lab .asset-boundary { margin: 1rem 0 1.4rem; }
+.asset-lab .asset-cost {
+  display: flex; align-items: end; justify-content: space-between; gap: 1rem;
+  margin: 1.25rem 0; padding: 1.25rem; color: #f4f2e8; background: var(--asset-leaf);
+}
+.asset-lab .asset-cost strong { font: 500 clamp(1.7rem, 5vw, 3rem) "Consolas", "Courier New", monospace; overflow-wrap: anywhere; }
+.asset-lab .asset-live { min-height: 1.5em; color: var(--asset-leaf); }
+.asset-lab .asset-alert { max-width: 1180px; margin: 1rem auto; padding: .9rem 1rem; color: #732f23; background: #f5e4dd; border-left: 4px solid var(--asset-clay); }
+.asset-lab .asset-history details { padding: .75rem 0; border-top: 1px solid var(--asset-line); }
+.asset-lab .asset-history summary { cursor: pointer; font-weight: 700; }
+.asset-lab .asset-history p, .asset-lab .asset-history li { overflow-wrap: anywhere; white-space: pre-wrap; }
+.asset-lab [role="status"] { font-size: .88rem; }
+@media (max-width: 760px) {
+  .asset-lab { padding: .75rem; }
+  .asset-lab .asset-fields { grid-template-columns: 1fr; }
+  .asset-lab .asset-wide { grid-column: auto; }
+  .asset-lab .asset-cost { align-items: flex-start; flex-direction: column; }
+  .asset-lab .asset-toolbar { align-items: stretch; flex-direction: column; }
+}

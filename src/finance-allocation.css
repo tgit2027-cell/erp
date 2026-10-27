@@ -1,0 +1,31 @@
+.allocation-lab { --allocation-ink: #283633; --allocation-muted: #66746e; --allocation-paper: #f2f4ed; --allocation-card: #fbfcf7; --allocation-accent: #b34b35; --allocation-line: #cbd4c8; color: var(--allocation-ink); }
+.allocation-lab .finance-draft-banner { background: #dce7dc; border-left: 5px solid #b34b35; }
+.allocation-banner h1 { max-width: 12ch; font-size: clamp(2.5rem, 6vw, 4.5rem); letter-spacing: -.055em; }
+.allocation-lab a { color: #93402f; font-weight: 700; text-underline-offset: .2em; }
+.allocation-register, .allocation-history { background: var(--allocation-card); border: 1px solid var(--allocation-line); border-radius: 14px; padding: clamp(1rem, 3vw, 2rem); }
+.allocation-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; }
+.allocation-toolbar, .allocation-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.allocation-lab button { border-radius: 7px; }
+.allocation-lab label { display: grid; gap: .45rem; }
+.allocation-editor { display: grid; gap: 1.5rem; margin-top: 1.5rem; padding: clamp(1rem, 3vw, 2rem); border: 1px solid var(--allocation-line); border-radius: 14px; background: var(--allocation-card); }
+.allocation-editor legend { padding: 0 .55rem; font-weight: 700; color: #93402f; }
+.allocation-metadata { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.25rem; }
+.allocation-metadata h2, .allocation-metadata > p { grid-column: 1 / -1; margin-bottom: 0; }
+.allocation-metadata textarea { min-height: 7rem; resize: vertical; }
+.allocation-destination, .allocation-line { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0; padding: 1rem; border: 1px solid var(--allocation-line); border-radius: 10px; }
+.allocation-destination legend, .allocation-line legend { padding: 0 .4rem; font-weight: 700; }
+.allocation-destination label, .allocation-line label { min-width: 0; }
+.allocation-destination select[multiple], .allocation-line select[multiple] { min-height: 5rem; }
+.allocation-remainder { display: grid; grid-template-columns: 1fr auto; gap: .5rem 1rem; padding: 1.25rem; border-radius: 10px; background: #e7eee4; }
+.allocation-remainder strong { font-variant-numeric: tabular-nums; }
+.allocation-remainder p { grid-column: 1 / -1; margin: .5rem 0 0; color: #8a3d2d; font-weight: 700; }
+.allocation-remainder.is-overallocated { background: #f3e2dd; }
+.allocation-remainder.is-overallocated > strong { color: #8a3326; }
+.allocation-journal-review { padding: 1rem 1.25rem; background: #f0eee5; border-radius: 10px; }
+.allocation-history details { padding: .9rem 0; border-top: 1px solid var(--allocation-line); }
+.allocation-history summary { cursor: pointer; font-weight: 700; }
+@media (max-width: 700px) {
+  .allocation-section-heading { align-items: flex-start; flex-direction: column; }
+  .allocation-metadata, .allocation-destination, .allocation-line { grid-template-columns: 1fr; }
+  .allocation-remainder { grid-template-columns: 1fr auto; }
+}

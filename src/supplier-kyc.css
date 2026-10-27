@@ -1,0 +1,49 @@
+.supplier-kyc { display: grid; gap: 14px; padding: 22px; }
+.kyc-head, .kyc-file-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.kyc-head h2 { margin: 6px 0; font: 700 22px var(--font-display); }
+.kyc-head p { max-width: 760px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.kyc-role { margin: 0; color: var(--muted); font-size: 11px; }
+.kyc-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.kyc-filter { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-size: 11px; font-weight: 600; cursor: pointer; }
+.kyc-filter.active { border-color: var(--green); background: var(--green); color: white; }
+.kyc-table-wrap { overflow-x: auto; }
+.kyc-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 12px; }
+.kyc-table th, .kyc-table td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.kyc-table thead th { background: var(--sand); font-size: 10px; letter-spacing: .04em; }
+.kyc-table small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+.kyc-link { display: block; padding: 0; border: 0; background: none; color: var(--brand-deep, #7a3d14); font: inherit; font-size: 12px; font-weight: 700; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.kyc-status { display: inline-block; padding: 3px 8px; border: 1px solid currentColor; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.kyc-draft { color: #5f6d63; }
+.kyc-submitted { color: #8a5a00; background: #fff7e3; }
+.kyc-approved { color: #2f6b45; background: #eef6ef; }
+.kyc-rejected { color: #9b392f; background: #fbecea; }
+.kyc-empty, .kyc-hint { margin: 0; color: var(--muted); font-size: 12px; }
+.kyc-form, .kyc-file { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); background: var(--sand); }
+.kyc-form h3, .kyc-file h3 { margin: 6px 0; font: 700 17px var(--font-display); }
+.kyc-file h4 { margin: 8px 0 0; font: 700 13px var(--font-display); }
+.kyc-form fieldset { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 0; padding: 12px; border: 1px solid var(--line); background: var(--paper); }
+.kyc-form legend { padding: 0 4px; font-size: 11px; font-weight: 700; }
+.kyc-form label, .kyc-upload label, .kyc-decision label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; font-weight: 600; }
+.kyc-form input, .kyc-upload select, .kyc-upload input, .kyc-decision textarea { min-width: 0; min-height: 35px; padding: 6px 8px; border: 1px solid var(--line); background: white; color: var(--ink); font: inherit; font-size: 12px; }
+.kyc-form .kyc-check { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink); }
+.kyc-form .kyc-check input { min-height: 0; }
+.kyc-wide { grid-column: 1 / -1; }
+.kyc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.kyc-actions .button { margin-top: 0; }
+.kyc-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 0; }
+.kyc-facts div { padding: 10px; border: 1px solid var(--line); background: var(--paper); }
+.kyc-facts dt { color: var(--muted); font-size: 10px; font-weight: 700; }
+.kyc-facts dd { margin: 4px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+.kyc-missing { margin: 0; padding: 8px 10px; border-left: 3px solid #c08a1e; background: #fff7e3; font-size: 12px; }
+.kyc-rejection { margin: 0; padding: 8px 10px; border-left: 3px solid #9b392f; background: #fbecea; font-size: 12px; }
+.kyc-documents { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.kyc-documents li { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 8px 10px; border: 1px solid var(--line); background: var(--paper); font-size: 12px; }
+.kyc-documents a { font-weight: 700; color: var(--brand-deep, #7a3d14); }
+.kyc-documents span { color: var(--muted); font-size: 11px; }
+.kyc-upload { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.kyc-upload .button { margin-top: 0; }
+.kyc-decision { display: grid; gap: 8px; padding: 12px; border: 1px solid #c08a1e; background: #fffbef; }
+.kyc-reject { color: #9b392f; }
+.kyc-history { margin: 0; padding-left: 18px; font-size: 11px; line-height: 1.7; }
+@media (max-width: 640px) { .supplier-kyc { padding: 14px; } }
+.kyc-table th[scope="row"] { font-size: 12px; text-transform: none; letter-spacing: normal; }

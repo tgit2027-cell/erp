@@ -1,0 +1,72 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "X6yx9TTADIE3VQuB5k0Mf"
+uri = "file://generated-artifacts/procurement-real-browser/Procurement-team-checklist.html"
+type = "html"
+title = "Procurement team acceptance checklist"
+description = "Short synthetic-only review steps, expected quantities, verified scope and limits. No shared credentials or real supplier data."
+logical_id = "55a037d8-d98a-4605-a9ab-ec51058065e7"
+content_hash = "sha256:2669c37f0600747f71dfc97fcc3fc5a400a56bb1908330df562c1527d1dbcbb8"
+size = 4681
+mtime_ms = 1792438808909
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:a4c96d33-2378-4ad9-981e-34ad51db3300/55a037d8-d98a-4605-a9ab-ec51058065e7/869785cb-ee3f-44d9-9ba3-4fc60f6d3f31"
+storage_version_token = "1792439084400763"
+content_type = "text/html"
+
+[[outputs]]
+id = "T0_x9axpSCrcaHwmbmRWU"
+uri = "file://generated-artifacts/procurement-real-browser/TEST-ONLY-partial.csv"
+type = "table"
+title = "Synthetic CSV — first partial receipt"
+description = "Two fictional lines: 4 and 2 EA. Explicit mapping and review required; selecting the file never posts a receipt."
+logical_id = "5d148ec9-feec-40db-a8ad-6a3436ce3a57"
+content_hash = "sha256:9be8822a929e34fec901862c5a4bebcc49d871b03ca3393a8eb673f6b8faf7e4"
+size = 150
+mtime_ms = 1792438745418
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:a4c96d33-2378-4ad9-981e-34ad51db3300/5d148ec9-feec-40db-a8ad-6a3436ce3a57/112cb837-db4b-4018-91bc-72b3ad666f66"
+storage_version_token = "1792439085731281"
+content_type = "text/csv"
+
+[[outputs]]
+id = "z0wWwTh_AOLchNtYNLWL0"
+uri = "file://generated-artifacts/procurement-real-browser/TEST-ONLY-partial.xlsx"
+type = "table"
+title = "Synthetic XLSX — second partial receipt"
+description = "Select TEST ONLY Receiving explicitly, not the cover sheet. Two fictional lines: 3 and 1 EA."
+logical_id = "18e8e5be-573c-40dc-8efe-642cb572e7e7"
+content_hash = "sha256:5962ee6c27bb8be06f043a1224f6e4517e9736ee789c1bf72d4ab3977bdeaa6a"
+size = 1859
+mtime_ms = 1792438745422
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:a4c96d33-2378-4ad9-981e-34ad51db3300/18e8e5be-573c-40dc-8efe-642cb572e7e7/7569ab3f-8f9e-4ffc-b112-6ef11c3ea780"
+storage_version_token = "1792439087084071"
+content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+[[outputs]]
+id = "XxHOXMdxjvYtAzucjo8Br"
+uri = "file://generated-artifacts/retail-real-browser/Retail-team-checklist.html"
+type = "html"
+title = "Retail to Delivery — synthetic team checklist"
+description = "Extended review steps for Manager approval/denial, full-payment handover and safe retry, with expected denials, feedback space and pending hold-policy clarification. Use the documented disposable environment only."
+logical_id = "6f17cc30-276b-4ca5-b13f-6bb85f994cad"
+content_hash = "sha256:b55ad98222e5a70e2b9dbf767f239f24cf9dc2bf662bdbd5a7394efea45cad35"
+size = 9141
+mtime_ms = 1792445876591
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:a4c96d33-2378-4ad9-981e-34ad51db3300/6f17cc30-276b-4ca5-b13f-6bb85f994cad/839b0671-1b17-4b31-a327-778d88caace7"
+storage_version_token = "1792446806067560"
+content_type = "text/html"
+
+[[outputs]]
+id = "6fV7rYDWrSjZt3q_fVBLB"
+uri = "file://INTEGRATION_REVIEW_GUIDE.md"
+type = "text"
+title = "ERP owner/team integration review guide"
+description = "Shared section review paths, separate isolated Finance lab prerequisites, readiness boundaries and feedback checklist. Project-relative references resolve inside the workspace; no credentials included."
+logical_id = "649702c4-9212-4b8b-b6a7-f789175466f8"
+content_hash = "sha256:d9b66d6d97d5754f8dde2164b34bf558d8019ed58a8558541225b074ab1976f7"
+size = 16704
+mtime_ms = 1792566595917
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:a4c96d33-2378-4ad9-981e-34ad51db3300/649702c4-9212-4b8b-b6a7-f789175466f8/b6a2d008-c873-4208-95e5-32ab6fe0223f"
+storage_version_token = "1792567188350100"
+content_type = "text/markdown"

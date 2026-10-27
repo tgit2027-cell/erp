@@ -1,0 +1,30 @@
+.al-controls { display: flex; align-items: end; gap: 10px; }
+.al-controls label, .al-filter { display: grid; gap: 4px; font-size: 11px; font-weight: 800; letter-spacing: .04em; color: #4f5b53; }
+.al-controls select, .al-filter select { min-height: 36px; padding: 0 10px; border: 1px solid var(--rc-line); background: var(--rc-paper); font: inherit; font-size: 13px; font-weight: 600; letter-spacing: normal; }
+.al-security .al-flag { background: #fbecea; }
+.al-table { min-width: 860px; }
+.al-table td { font-size: 12px; }
+.al-alert { background: #fdf4f2; }
+.al-kind { display: inline-block; padding: 2px 7px; border: 1px solid #c9c2b2; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.al-sign_in_failed, .al-sign_in_refused, .al-sign_in_locked, .al-access_denied { color: #9b392f; border-color: currentColor; }
+.al-sign_in, .al-sign_out { color: #2f6b45; border-color: currentColor; }
+.al-table th[scope="row"] { font-size: 13px; text-transform: none; letter-spacing: normal; }
+.al-user-link { padding: 0; border: 0; background: none; color: #7a3d14; font: inherit; font-size: 13px; font-weight: 700; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.al-user-link:focus-visible { outline: 2px solid #7a3d14; outline-offset: 2px; }
+.al-disabled { color: #9b392f; font-size: 11px; font-weight: 800; }
+.al-bad { color: #9b392f; font-weight: 800; }
+.al-empty { padding: 14px; border: 1px dashed var(--rc-line); color: #59645d; font-size: 13px; }
+.al-addresses { margin: 0; padding-left: 18px; font-size: 13px; }
+.al-user > header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 12px; }
+.al-user h3 { margin: 4px 0; font: 700 18px/1.3 Manrope, "DM Sans", sans-serif; }
+.al-user p { margin: 0; color: #59645d; font-size: 13px; }
+.al-filter { max-width: 240px; margin-bottom: 12px; }
+.al-pages { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; }
+.al-pages span { margin-right: auto; }
+@media (max-width: 640px) { .al-controls { width: 100%; } }
+.al-touched { display: block; max-width: 640px; margin-top: 3px; color: #59645d; font-size: 11px; text-transform: none; white-space: normal; overflow-wrap: anywhere; }
+.al-changes { margin-top: 4px; font-size: 11px; }
+.al-changes summary { cursor: pointer; color: #7a3d14; font-weight: 700; }
+.al-changes ul { margin: 4px 0 0; padding-left: 16px; }
+.al-changes li { overflow-wrap: anywhere; }
+.al-system_job { color: #3d4f7a; border-color: currentColor; }

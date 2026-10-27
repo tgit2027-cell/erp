@@ -1,0 +1,15 @@
+.sr-verdict { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 14px; padding: 13px 15px; border: 1px solid var(--rc-line); border-left: 4px solid #2f6b45; background: var(--rc-paper); font-size: 13px; }
+.sr-verdict.is-off { border-left-color: #9b392f; }
+.sr-verdict span { color: #4f5b53; }
+.sr-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; margin: 0 0 18px; border: 1px solid var(--rc-line); background: var(--rc-line); }
+.sr-summary > div { display: grid; gap: 4px; padding: 10px 13px; background: var(--brand-soft); }
+.sr-summary dt { color: #59645d; font-size: 10px; font-weight: 800; letter-spacing: .05em; }
+.sr-summary dd { margin: 0; font: 700 14px/1.2 "DM Mono", monospace; font-variant-numeric: tabular-nums; }
+.sr-area { margin-bottom: 16px; }
+.sr-area h3 { margin: 0 0 8px; font: 700 15px/1.3 Manrope, "DM Sans", sans-serif; }
+.sr-table { min-width: 760px; }
+.retail-collections .sr-table th[scope="row"] { font-family: "DM Sans", "Segoe UI", sans-serif; font-size: 12px; font-weight: 600; letter-spacing: normal; text-transform: none; line-height: 1.4; }
+.sr-off { background: #fbecea; }
+.sr-badge { display: inline-block; padding: 3px 8px; border: 1px solid currentColor; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.sr-badge.is-ok { color: #2f6b45; }
+.sr-badge.is-off { color: #9b392f; }

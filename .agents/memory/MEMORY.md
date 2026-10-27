@@ -1,0 +1,23 @@
+- [Purchasing policy boundaries](purchasing-policy-boundaries.md) — apply the user-approved synthetic rules without inventing production thresholds or real-person assignments.
+- [Reporting authorization boundaries](reporting-authorization-boundaries.md) — keep panel assignment, sensitive data scope, company consolidation, and export audit controls separate.
+- [Favorites navigation boundaries](favorites-navigation-boundaries.md) — navigation pins must preserve existing denied/configuration-needed workbench states, not grant transaction access.
+- [Function-page navigation](function-page-navigation.md) — completed workspace children need focused views, not scroll-only anchors; preserve state and legacy aggregate compatibility.
+- [Local PostgreSQL isolation and version](local-postgres-version-match.md) — preserve existing clusters and explicitly target disposable test clusters with every database client.
+- [Backup and recovery approval boundaries](backup-recovery-boundaries.md) — private bundle handling, logical restore comparisons, and limits of local recovery evidence.
+- [Restore constraint semantics](postgres-restore-constraint-semantics.md) — equivalent PostgreSQL literal-array cast deparsing requires narrow proof, not broad schema-diff suppression.
+- [Django request-user proxies](django-request-user-proxy.md) — use the configured user model for ORM queries in views; request.user may be a lazy proxy despite direct-user tests passing.
+- [Benchmark validity](benchmark-query-plan-fidelity.md) — reuse API query builders, measure actual request overlap, and keep disposable whole-suite environments compatible with safety guards.
+- [Notification delivery boundary](notification-delivery-boundary.md) — readiness/storage outbox records are dry-run intents only; real channels, recipients, wording, schedules, and delivery need explicit approval.
+- [Packing-list catalog scope](packing-list-catalog-scope.md) — until BU-to-item membership is approved, match only authorized ledger codes; no ledger match does not prove catalog absence.
+- [Warehouse capacity boundaries](warehouse-capacity-boundaries.md) — capacity is synthetic, manually maintained, separately assigned per physical location, and never implied by stock access.
+- [Synthetic integrity diagnostics](synthetic-integrity-diagnostics.md) — use one read-only consistent snapshot; mixed posting generations can create false discrepancies.
+- [Development preview origin](development-preview-origin.md) — preserve the exact preview scheme and port; a portless-domain error need not mean the app is down.
+- [Browser verification boundaries](browser-verification-boundaries.md) — isolated Chromium/mock-API evidence is not live-session authentication or shared-preview acceptance.
+- [Sales-return policy boundaries](sales-return-policy-boundaries.md) — owner confirmed 14 calendar days from delivery; intake stays non-posting and Finance/legal decisions remain separate.
+- [Authorization test evidence](authorization-test-evidence.md) — verify protected values and explicit memberships; status-only/shared-location assumptions can create false findings.
+- [Quotation references](quotation-reference-boundaries.md) — confirmed registered name versus Tivoli trademark; preserve historical snapshots; T&C/output rights and Finance policies remain pending.
+- [Started-workflow completion](started-workflow-completion.md) — pending policy blocks dependent behavior, not independent completion of existing authorized workflows.
+- [Rendered DOM diagnostics](rendered-test-diagnostics.md) — assert boolean visibility/identity to avoid expensive React-graph formatting on expected failures.
+- [Finance foundation boundaries](finance-foundation-boundaries.md) — one legal entity with BU dimensions; continue isolated drafts without inferring shared Finance authority.
+- [Interface language scope](interface-language-scope.md) — internal ERP is English only; customer quotations/invoices stay bilingual and stored Arabic content is retained.
+- [Verification evidence retention](verification-evidence-retention.md) — preserve sanitized final logs in ignored workspace artifacts; temporary logs may disappear on interruption.

@@ -1,0 +1,97 @@
+.lab-review-shell, .finance-lab-shell {
+  --lab-ink: #263b3b;
+  --lab-muted: #4c625e;
+  --lab-paper: #f1f3eb;
+  --lab-card: #fbfcf6;
+  --lab-line: #d4ddd2;
+  --lab-teal: #1f625b;
+  --lab-coral: #bd624b;
+  min-height: 100dvh;
+  color: var(--lab-ink);
+  background:
+    radial-gradient(ellipse at 84% 0%, rgba(208, 223, 207, .68), transparent 34rem),
+    var(--lab-paper);
+}
+.lab-nav { display:flex; align-items:center; gap:24px; padding:13px clamp(16px,4vw,58px); border-bottom:1px solid var(--lab-line); background:rgba(251,252,246,.82); }
+.lab-nav-brand { display:grid; place-items:center; flex:0 0 39px; height:39px; color:#f6f7ed; background:var(--lab-teal); border-radius:50%; font:700 12px/1 ui-monospace,monospace; text-decoration:none; letter-spacing:-.05em; }
+.lab-nav-links { display:flex; align-items:center; gap:5px; overflow-x:auto; scrollbar-width:thin; }
+.lab-nav-links a { white-space:nowrap; color:var(--lab-muted); text-decoration:none; font-size:12px; padding:9px 11px; border-radius:3px; }
+.lab-nav-links a:hover,.lab-nav-links a[aria-current=page] { color:var(--lab-teal); background:#e6eee5; }
+.lab-review-page { max-width:1160px; margin:auto; padding:clamp(24px,5vw,66px) clamp(16px,4vw,56px) 32px; }
+.lab-review-hero { display:flex; align-items:flex-end; justify-content:space-between; gap:28px; padding:12px 0 43px; border-bottom:1px solid var(--lab-line); }
+.lab-review-eyebrow { margin:0 0 13px; color:var(--lab-teal); font:700 10px/1.3 ui-monospace,monospace; letter-spacing:.14em; }
+.lab-review-hero h1 { margin:0; font:500 clamp(42px,7vw,78px)/.99 Georgia,serif; letter-spacing:-.055em; }
+.lab-review-hero h1 em { color:var(--lab-teal); font-weight:400; }
+.lab-review-intro { max-width:530px; margin:23px 0 0; color:var(--lab-muted); font-size:15px; line-height:1.6; }
+.lab-review-stamp { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:0 0 124px; height:124px; border:1px solid #aebfb2; border-radius:50%; color:var(--lab-teal); transform:rotate(5deg); }
+.lab-review-stamp span,.lab-review-stamp small { font:600 9px/1.2 ui-monospace,monospace; letter-spacing:.1em; }
+.lab-review-stamp strong { font:500 39px/1.15 Georgia,serif; }
+.lab-review-register { padding-top:36px; }
+.lab-review-filters { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto; gap:12px; align-items:end; margin-bottom:14px; }
+.lab-review-filters label { display:grid; gap:6px; min-width:0; font-size:12px; }
+.lab-review-filters input,.lab-review-filters select { box-sizing:border-box; width:100%; min-width:0; min-height:40px; padding:9px 10px; border:1px solid var(--lab-line); border-radius:2px; color:inherit; background:var(--lab-card); font:inherit; }
+.lab-review-filters input:focus-visible,.lab-review-filters select:focus-visible { outline:3px solid var(--lab-teal); outline-offset:3px; }
+@media(max-width:620px) { .lab-review-filters { grid-template-columns:minmax(0,1fr); } }
+.lab-review-section-head { display:flex; align-items:end; justify-content:space-between; gap:16px; margin-bottom:20px; }
+.lab-review-section-head h2 { margin:0; font:500 clamp(26px,4vw,38px)/1.1 Georgia,serif; letter-spacing:-.035em; }
+.lab-review-button,.lab-review-link { display:inline-flex; align-items:center; justify-content:center; min-height:39px; padding:9px 14px; border:1px solid var(--lab-teal); border-radius:2px; background:var(--lab-teal); color:#f8f8ee; font:inherit; font-size:12px; font-weight:600; line-height:1.2; text-decoration:none; cursor:pointer; }
+.lab-review-button:hover,.lab-review-link:hover { background:#174d48; }
+.lab-review-button:disabled { opacity:.55; cursor:wait; }
+.lab-review-groups { display:grid; gap:17px; }
+.lab-review-group { overflow:hidden; border:1px solid var(--lab-line); background:var(--lab-card); }
+.lab-review-group>header { display:flex; align-items:center; gap:15px; padding:16px 20px; border-bottom:1px solid var(--lab-line); background:#e9eee5; }
+.lab-review-group-number { display:grid; place-items:center; width:37px; height:37px; border:1px solid #b5c6b7; border-radius:50%; color:var(--lab-teal); font:12px ui-monospace,monospace; }
+.lab-review-group h3 { margin:0; font:500 20px/1.2 Georgia,serif; }
+.lab-review-group header p { margin:4px 0 0; color:var(--lab-muted); font-size:11px; }
+.lab-review-editor-link { margin-left:auto; color:var(--lab-teal); font-size:12px; font-weight:650; text-decoration:none; }
+.lab-review-group ul { list-style:none; margin:0; padding:0; }
+.lab-review-group li { display:grid; grid-template-columns:54px minmax(0,1fr) minmax(100px,auto) auto; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid #e7ebe2; }
+.lab-review-group li:last-child { border-bottom:0; }
+.lab-review-item-id { color:#a75d48; font:12px ui-monospace,monospace; }
+.lab-review-item-copy strong { font-size:14px; font-weight:650; }
+.lab-review-item-copy p { margin:4px 0 0; color:var(--lab-muted); font-size:11px; text-transform:capitalize; }
+.lab-review-group time { color:var(--lab-muted); font:11px ui-monospace,monospace; }
+.lab-review-reopen { color:var(--lab-teal); font-size:12px; font-weight:700; text-decoration:none; }
+.lab-review-reopen:hover,.lab-review-editor-link:hover { text-decoration:underline; }
+.lab-review-empty,.lab-review-message { display:flex; align-items:center; gap:20px; padding:24px; border:1px solid var(--lab-line); background:var(--lab-card); }
+.lab-review-empty-index,.lab-review-message-mark { color:var(--lab-coral); font:500 34px/1 Georgia,serif; }
+.lab-review-empty h3,.lab-review-message h3 { margin:0; font:500 22px Georgia,serif; }
+.lab-review-empty p,.lab-review-message p { color:var(--lab-muted); font-size:13px; line-height:1.5; }
+.lab-review-empty .lab-review-link { margin-left:auto; flex-shrink:0; }
+.lab-review-message { align-items:flex-start; }
+.lab-review-message>div { flex:1; }
+.lab-review-message .lab-review-button { flex-shrink:0; }
+.lab-review-message.is-forbidden { border-left:4px solid var(--lab-coral); }
+.lab-review-skeleton { display:grid; gap:12px; }
+.lab-review-skeleton span { height:68px; border:1px solid var(--lab-line); background:linear-gradient(90deg,#e7ece4,#f6f7f0,#e7ece4); background-size:200% 100%; animation:lab-shimmer 1.5s ease-in-out infinite; }
+@keyframes lab-shimmer { to { background-position:-200% 0; } }
+.lab-recovery { margin:22px 0; padding:18px 20px; border:1px solid #ddc5aa; border-left:4px solid #b9714c; background:#faf2e8; }
+.lab-recovery-heading h2 { margin:0 0 6px; font:500 23px Georgia,serif; }
+.lab-recovery-caution { color:#765d4d; font-size:12px; line-height:1.5; }
+.lab-recovery-list { list-style:none; padding:0; margin:12px 0 0; }
+.lab-recovery-list li { display:flex; justify-content:space-between; gap:20px; padding:13px 0; border-top:1px solid #e6d7c5; }
+.lab-recovery-list strong { font-size:13px; }
+.lab-recovery-list p { margin:4px 0; color:#765d4d; font-size:12px; }
+.lab-recovery-list code { color:#735a47; font-size:10px; }
+.lab-recovery-actions { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.lab-recovery-actions .lab-review-link,.lab-recovery-actions .lab-review-button { min-height:32px; font-size:11px; }
+.lab-recovery-actions .lab-review-button { color:var(--lab-teal); background:transparent; }
+.lab-recovery-actions .lab-review-button:hover { color:white; background:#174d48; }
+.lab-nav a:focus-visible,.lab-review-page a:focus-visible,.lab-review-page button:focus-visible,
+.lab-recovery a:focus-visible,.lab-recovery button:focus-visible { outline:3px solid #1f625b; outline-offset:3px; }
+.lab-review-footer { display:flex; justify-content:space-between; gap:16px; padding-top:18px; margin-top:36px; border-top:1px solid var(--lab-line); color:var(--lab-muted); font:10px ui-monospace,monospace; }
+@media(max-width:700px) {
+  .lab-nav { align-items:flex-start; padding:11px 14px; gap:12px; }
+  .lab-nav-links a { padding:9px; }
+  .lab-review-hero { align-items:flex-start; }
+  .lab-review-stamp { flex-basis:83px; height:83px; margin-top:15px; }
+  .lab-review-stamp strong { font-size:29px; }
+  .lab-review-group li { grid-template-columns:42px minmax(0,1fr) auto; gap:8px; padding:13px 12px; }
+  .lab-review-group time { grid-column:2; grid-row:2; }
+  .lab-review-reopen { grid-column:3; grid-row:1 / span 2; }
+  .lab-review-empty,.lab-review-message { align-items:flex-start; flex-wrap:wrap; padding:18px; }
+  .lab-review-empty .lab-review-link { margin-left:0; }
+  .lab-review-message .lab-review-button { margin-left:auto; }
+  .lab-recovery-list li { flex-direction:column; }
+  .lab-review-footer { flex-direction:column; }
+}

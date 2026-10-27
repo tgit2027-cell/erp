@@ -1,0 +1,53 @@
+.viz-dashboard { display: grid; gap: 16px; }
+.viz-dashboard, .viz-panel {
+  --viz-surface: #ffffff;
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-3: #1baf7a;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-muted: #898781;
+}
+.viz-intro { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.viz-panel { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); background: var(--viz-surface); }
+.viz-panel > header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+.viz-panel h3 { margin: 0; font: 700 16px var(--font-display); color: var(--ink); }
+.viz-panel > header small { color: var(--muted); font-size: 11px; }
+.viz-denied { margin: 0; padding: 10px; border: 1px dashed var(--line); color: var(--muted); font-size: 12px; }
+.viz-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.viz-kpi { display: grid; gap: 4px; padding: 12px; border: 1px solid var(--line); background: var(--sand); }
+.viz-kpi small { color: var(--muted); font-size: 11px; font-weight: 600; }
+.viz-kpi strong { color: var(--ink); font-size: 20px; font-weight: 650; }
+.viz-charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 12px; }
+.viz-chart { position: relative; display: grid; gap: 8px; align-content: start; margin: 0; padding: 12px; border: 1px solid var(--line); background: var(--viz-surface); }
+.viz-chart figcaption { color: var(--ink); font-size: 13px; font-weight: 700; }
+.viz-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: 11px; }
+.viz-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.viz-key { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+.viz-plot { position: relative; }
+.viz-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.viz-grid { stroke: var(--viz-grid); stroke-width: 1; }
+.viz-baseline { stroke: var(--viz-axis); stroke-width: 1; }
+.viz-tick { fill: var(--viz-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.viz-crosshair { stroke: var(--viz-axis); stroke-width: 1; }
+.viz-dim path { opacity: .45; }
+.viz-svg rect[tabindex]:focus-visible { outline: none; stroke: var(--ink); stroke-width: 1; }
+.viz-tooltip { white-space: nowrap; position: absolute; top: 4px; z-index: 2; display: grid; gap: 3px; min-width: 150px; padding: 8px 10px; transform: translateX(-50%); border: 1px solid rgba(11,11,11,.12); background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.12); color: var(--ink); font-size: 11px; pointer-events: none; }
+.viz-tooltip span { display: flex; align-items: center; gap: 6px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.viz-bars { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.viz-bars li { display: grid; grid-template-columns: minmax(90px, 38%) 1fr; gap: 10px; align-items: center; }
+.viz-bar-label { overflow: hidden; color: var(--ink); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.viz-bar-tracks { display: grid; gap: 2px; }
+.viz-bar-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.viz-bar { flex: none; min-width: 2px; max-width: calc(100% - 96px); height: 14px; border-radius: 0 4px 4px 0; }
+.viz-bar-value { flex: none; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.viz-note, .viz-empty { margin: 0; color: var(--muted); font-size: 11px; }
+.viz-table summary { width: fit-content; color: var(--muted); font-size: 11px; cursor: pointer; }
+.viz-table-scroll { overflow-x: auto; margin-top: 6px; }
+.viz-table table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.viz-table th, .viz-table td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; font-variant-numeric: tabular-nums; }
+.viz-table thead th { background: var(--sand); }
+.report-view-toggle { display: inline-flex; gap: 0; border: 1px solid var(--line); background: var(--paper); }
+.report-view-toggle button { min-height: 34px; padding: 0 14px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.report-view-toggle button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+@media (forced-colors: active) { .viz-bar, .viz-key { forced-color-adjust: none; } }

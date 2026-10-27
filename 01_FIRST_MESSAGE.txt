@@ -1,0 +1,11 @@
+Build Milestone 1 of Tivoli's independent custom ERP using the attached package.
+
+First read replit.md, MILESTONE_1.md, and the two reference specifications under specs/. Treat the reference documents as architecture guidance, not permission to build every module now.
+
+Confirm this is a private project, with a protected preview, and that Django + PostgreSQL + React/TypeScript can run here. If you cannot verify privacy, say what the owner needs to verify. Do not publish the application. Use synthetic data only. Do not purchase resources or connect live systems.
+
+Give a concise plan, then implement Milestone 1: the persisted company/unit/location/item foundation, scoped demo authentication, an honest seven-section shell and automated permission tests. Retain the prescribed backend rather than replacing it with your default stack. Use PostgreSQL for migrations and database tests; if unavailable, report the blocker instead of reporting SQLite results as equivalent.
+
+Make the project runnable both in Replit and outside it. Keep secrets out of committed files and output. Seed synthetic examples safely. Add precise setup and test instructions. Run the tests, then fill in REVIEW_HANDOFF.md with the actual results, changed files, outstanding limitations and how to reproduce the preview.
+
+Do not implement ledger posting, payments, payroll, AI agents, integrations or the later milestones yet. Mark those areas Planned. Stop after Milestone 1 is implemented and its evidence is ready for review. Never claim production readiness.
