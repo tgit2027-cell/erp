@@ -1,0 +1,23 @@
+
+name: Prepare ERP Admin Access
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check management command
+        run: |
+          test -f foundation/management/commands/grant_erp_admin_full_access.py
+          echo "Management command file exists."
+
+      - name: Show Python version
+        run: python --version
