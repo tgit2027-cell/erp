@@ -109,6 +109,7 @@ TIME_ZONE = "Asia/Qatar"
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
+STATIC_ROOT = Path(os.environ.get("DJANGO_STATIC_ROOT") or (BASE_DIR / "staticfiles")).resolve()
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT") or (BASE_DIR / "media")).resolve()
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
