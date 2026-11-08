@@ -28,29 +28,29 @@
 }
 
 :root[data-unit-theme="roche"] {
-  --brand: #426d8b;
-  --brand-deep: #315872;
-  --brand-soft: #e8f1f6;
-  --brand-mid: #3b6380;
-  --sidebar: #263f50;
-  --sidebar-muted: #b7cbd7;
-  --focus: #6394b2;
-  --green: #426d8b;
-  --line: #dce6ec;
-  --sand: #f1f5f7;
+  --brand: #2F6AA3;
+  --brand-deep: #265582;
+  --brand-soft: #E4EEF8;
+  --brand-mid: #285A8B;
+  --sidebar: #0C1C2A;
+  --sidebar-muted: #C9D8E7;
+  --focus: #2F6AA3;
+  --green: #2F6AA3;
+  --line: #D3E1EE;
+  --sand: #F3F7FB;
 }
 
 :root[data-unit-theme="natuzzi"] {
-  --brand: #806343;
-  --brand-deep: #654b32;
-  --brand-soft: #f2ece4;
-  --brand-mid: #745838;
-  --sidebar: #473a2e;
-  --sidebar-muted: #c9b9a4;
-  --focus: #a9855f;
-  --green: #806343;
-  --line: #e8e0d6;
-  --sand: #f6f3ee;
+  --brand: #2E7D4F;
+  --brand-deep: #25643F;
+  --brand-soft: #E2F1E7;
+  --brand-mid: #276A43;
+  --sidebar: #0C2115;
+  --sidebar-muted: #C9DDD1;
+  --focus: #2E7D4F;
+  --green: #2E7D4F;
+  --line: #D0E5D7;
+  --sand: #F3F8F4;
 }
 
 :root[data-unit-theme="slate"] {
@@ -64,6 +64,60 @@
   --green: #4c6474;
   --line: #dfe6e9;
   --sand: #f2f5f6;
+}
+
+/* Area colours (Sam, 6 Nov 2026): Factory brown, Warehouse and Logistics yellow,
+   HR purple. They win over the showroom colours while one of their pages is open. */
+:root[data-area-theme="factory"] {
+  --brand: #7A4A2A;
+  --brand-deep: #623B22;
+  --brand-soft: #F3E8DF;
+  --brand-mid: #683F24;
+  --sidebar: #20130B;
+  --sidebar-muted: #DCD0C8;
+  --focus: #7A4A2A;
+  --green: #7A4A2A;
+  --line: #E5D5C8;
+  --sand: #F9F5F1;
+}
+
+:root[data-area-theme="projects"] {
+  --brand: #A8324A;
+  --brand-deep: #8A283C;
+  --brand-soft: #F8E5E9;
+  --brand-mid: #962C42;
+  --sidebar: #2A0C13;
+  --sidebar-muted: #E8D3D8;
+  --focus: #A8324A;
+  --green: #A8324A;
+  --line: #EED5DB;
+  --sand: #FCF6F7;
+}
+
+:root[data-area-theme="warehouse"] {
+  --brand: #946600;
+  --brand-deep: #7B5500;
+  --brand-soft: #FBF0CF;
+  --brand-mid: #835A00;
+  --sidebar: #281C00;
+  --sidebar-muted: #E5D8BD;
+  --focus: #946600;
+  --green: #946600;
+  --line: #EFDFAE;
+  --sand: #FDF9EB;
+}
+
+:root[data-area-theme="hr"] {
+  --brand: #6E46A8;
+  --brand-deep: #583886;
+  --brand-soft: #EEE6F8;
+  --brand-mid: #5E3C8F;
+  --sidebar: #1D122C;
+  --sidebar-muted: #D9CFE8;
+  --focus: #6E46A8;
+  --green: #6E46A8;
+  --line: #DED1EF;
+  --sand: #F8F5FC;
 }
 
 * { box-sizing: border-box; }
@@ -277,7 +331,8 @@ td small { margin-top: 4px; color: #626f65; font-size: 8px; }
   .main-content { width: calc(100% - 64px); margin-left: 0; }
   .topbar { height: auto; min-height: 60px; gap: 12px; padding: 10px 16px; }
   .breadcrumb { font-size: 9px; }
-  .topbar-actions { gap: 9px; }
+  .topbar { flex-wrap: wrap; }
+  .topbar-actions { flex-wrap: wrap; min-width: 0; max-width: 100%; gap: 9px; }
   .unit-select-label > span, .user-name { display: none; }
   .unit-select-label select { max-width: 130px; height: 31px; font-size: 9px; }
   .signout { font-size: 9px; }

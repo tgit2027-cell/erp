@@ -18,6 +18,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from .models import (
+    ClosedMonth,
     IdempotencyRecord,
     JournalEntry,
     JournalLine,
@@ -73,6 +74,7 @@ class ReceiptLine:
 _TEST_ACCOUNTS = {
     "TEST_INVENTORY": ("TEST ONLY — Inventory asset", LedgerAccount.AccountClass.ASSET),
     "TEST_GRNI": ("TEST ONLY — Receipt clearing", LedgerAccount.AccountClass.LIABILITY),
+    "TEST_SUPPLIER_ADVANCES": ("TEST ONLY — Advances paid to suppliers", LedgerAccount.AccountClass.ASSET),
     "TEST_LANDED_CLEARING": (
         "TEST ONLY — Landed-charge clearing",
         LedgerAccount.AccountClass.LIABILITY,
@@ -82,6 +84,79 @@ _TEST_ACCOUNTS = {
     "TEST_COGS": ("TEST ONLY — Cost of goods sold", LedgerAccount.AccountClass.EXPENSE),
     "TEST_CASH": ("TEST ONLY — Simulated cash and bank", LedgerAccount.AccountClass.ASSET),
     "TEST_CUSTOMER_DEPOSITS": ("TEST ONLY — Customer deposits", LedgerAccount.AccountClass.LIABILITY),
+    "TEST_FX_GAIN": ("TEST ONLY — Realized exchange gain", LedgerAccount.AccountClass.REVENUE),
+    "TEST_FX_LOSS": ("TEST ONLY — Realized exchange loss", LedgerAccount.AccountClass.EXPENSE),
+    # Month-end revaluation of foreign currency still owed; reversed on the first day of the next month.
+    "TEST_FX_UNREALISED": ("TEST ONLY — Unrealised exchange gains and losses", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_STOCK_COUNT": ("TEST ONLY — Stock count differences", LedgerAccount.AccountClass.EXPENSE),
+    # Debited when a customer return is refunded, so it nets against sales revenue.
+    "TEST_SALES_RETURNS": ("TEST ONLY — Sales returns", LedgerAccount.AccountClass.REVENUE),
+    "TEST_SALES_ALLOWANCES": ("TEST ONLY — Price reductions given to customers after sale", LedgerAccount.AccountClass.REVENUE),
+    # A supplier bill higher (debit) or lower (credit) than the goods received, once a second person accepts it.
+    "TEST_BILL_DIFFERENCES": ("TEST ONLY — Supplier bill differences", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_BANK_CHARGES": ("TEST ONLY — Bank charges", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_INTEREST_INCOME": ("TEST ONLY — Interest received", LedgerAccount.AccountClass.REVENUE),
+    # Running costs entered on the expenses screen, one account per category (provisional list).
+    "TEST_EXP_RENT": ("TEST ONLY — Rent", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_UTILITIES": ("TEST ONLY — Electricity and water", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_TELECOM": ("TEST ONLY — Telephone and internet", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_MARKETING": ("TEST ONLY — Marketing and advertising", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_TRAVEL": ("TEST ONLY — Travel", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_TRANSPORT": ("TEST ONLY — Transport and delivery", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_REPAIRS": ("TEST ONLY — Repairs and maintenance", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_OFFICE": ("TEST ONLY — Office supplies", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_PROFESSIONAL": ("TEST ONLY — Professional fees", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_GOVERNMENT": ("TEST ONLY — Government fees", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_HOSPITALITY": ("TEST ONLY — Hospitality", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_OTHER": ("TEST ONLY — Other expenses", LedgerAccount.AccountClass.EXPENSE),
+    # Amounts set aside for costs that are likely but not yet due (end of service, doubtful debts); provisional.
+    "TEST_EXP_PROVISIONS": ("TEST ONLY — Provisions", LedgerAccount.AccountClass.EXPENSE),
+    # Expenses staff paid with their own money, owed back to them until reimbursed.
+    "TEST_EXPENSE_CLAIMS": ("TEST ONLY — Staff expense claims to repay", LedgerAccount.AccountClass.LIABILITY),
+    # Costs of something being built for the company's own use (a showroom fit-out, say) until it is finished.
+    "TEST_ASSETS_UNDER_CONSTRUCTION": ("TEST ONLY — Assets under construction", LedgerAccount.AccountClass.ASSET),
+    "TEST_FIXED_ASSETS": ("TEST ONLY — Fixed assets at cost", LedgerAccount.AccountClass.ASSET),
+    "TEST_ACCUM_DEPRECIATION": (
+        "TEST ONLY — Accumulated depreciation (reduces fixed assets)",
+        LedgerAccount.AccountClass.ASSET,
+    ),
+    "TEST_DEPRECIATION": ("TEST ONLY — Depreciation", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_ASSET_DISPOSAL_GAIN": ("TEST ONLY — Gain on selling fixed assets", LedgerAccount.AccountClass.REVENUE),
+    "TEST_ASSET_DISPOSAL_LOSS": ("TEST ONLY — Loss on selling or writing off fixed assets", LedgerAccount.AccountClass.EXPENSE),
+    # Used by manual journal entries: costs of this month not yet billed, and costs paid ahead for later months.
+    "TEST_ACCRUALS": ("TEST ONLY — Costs owed but not yet billed (accruals)", LedgerAccount.AccountClass.LIABILITY),
+    "TEST_PREPAYMENTS": ("TEST ONLY — Costs paid in advance (prepayments)", LedgerAccount.AccountClass.ASSET),
+    # Costs moved between business units of one company; it nets to zero across the company.
+    "TEST_UNIT_SHARING": ("TEST ONLY — Costs shared between business units", LedgerAccount.AccountClass.ASSET),
+    # Payroll: pay for the month, overtime (one line per sales order), end of service, and what is owed to staff.
+    "TEST_EXP_SALARIES": ("TEST ONLY — Salaries and allowances", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_OVERTIME": ("TEST ONLY — Overtime charged to sales orders", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_END_OF_SERVICE": ("TEST ONLY — End of service pay", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_SALARIES_PAYABLE": ("TEST ONLY — Salaries to pay through WPS", LedgerAccount.AccountClass.LIABILITY),
+    # Commission and rewards: the cost when an incentive run is approved, owed to staff until payroll pays it.
+    "TEST_EXP_COMMISSION": ("TEST ONLY — Sales commission", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_EXP_REWARDS": ("TEST ONLY — Performance rewards", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_COMMISSION_PAYABLE": ("TEST ONLY — Commission and rewards to pay with payroll", LedgerAccount.AccountClass.LIABILITY),
+    # Staff loans and salary advances paid out and not yet taken back through payroll.
+    "TEST_STAFF_LOANS": ("TEST ONLY — Staff loans and salary advances", LedgerAccount.AccountClass.ASSET),
+    # Factory: what jobs in production have cost so far, and the labour and overhead moved from running costs into them.
+    "TEST_WIP": ("TEST ONLY — Factory jobs in production (work in progress)", LedgerAccount.AccountClass.ASSET),
+    "TEST_FACTORY_LABOUR": ("TEST ONLY — Factory labour moved into jobs", LedgerAccount.AccountClass.EXPENSE),
+    "TEST_FACTORY_OVERHEAD": ("TEST ONLY — Factory overhead moved into jobs", LedgerAccount.AccountClass.EXPENSE),
+    # Finished client jobs, in the warehouse or on their way to site, until the client receives them.
+    "TEST_FINISHED_JOBS": ("TEST ONLY — Finished factory jobs not yet received by the client", LedgerAccount.AccountClass.ASSET),
+    # Projects & Fit-Out: what clients owe on claim invoices, the retention they hold back until handover and the
+    # defects period end, the advances they paid ahead of the work, and the revenue billed on claims.
+    "TEST_PROJECT_RECEIVABLE": ("TEST ONLY — Project clients to collect (claim invoices)", LedgerAccount.AccountClass.ASSET),
+    "TEST_RETENTION_RECEIVABLE": ("TEST ONLY — Retention held by project clients", LedgerAccount.AccountClass.ASSET),
+    "TEST_PROJECT_ADVANCES": ("TEST ONLY — Advances received from project clients", LedgerAccount.AccountClass.LIABILITY),
+    "TEST_PROJECT_REVENUE": ("TEST ONLY — Project revenue (claims)", LedgerAccount.AccountClass.REVENUE),
+    # What suppliers and subcontractors were paid on project orders.
+    "TEST_PROJECT_COSTS": ("TEST ONLY — Project costs paid to suppliers and subcontractors",
+                           LedgerAccount.AccountClass.EXPENSE),
+    # Go-live: the other side of opening stock and of the opening trial balance lines that their own imports bring in.
+    # It is back at zero once stock, customer and supplier balances are all in.
+    "TEST_OPENING_BALANCES": ("TEST ONLY — Opening balances brought over at go-live", LedgerAccount.AccountClass.LIABILITY),
 }
 
 
@@ -263,7 +338,8 @@ def _account(legal_entity, code):
     return account
 
 
-def _post_journal(*, legal_entity, business_unit, idempotency, kind, description, lines):
+def _post_journal(*, legal_entity, business_unit, idempotency, kind, description, lines, document_date=None):
+    """Post a balanced journal. document_date is the source document's date; it defaults to today in Qatar."""
     if business_unit.legal_entity_id != legal_entity.pk:
         raise InvalidTransaction("A journal business unit must belong to its legal entity.")
     normalized = []
@@ -279,12 +355,19 @@ def _post_journal(*, legal_entity, business_unit, idempotency, kind, description
         total_credit += credit
     if len(normalized) < 2 or total_debit != total_credit:
         raise UnbalancedJournal("A posted journal must have at least two lines and balance in QAR.")
+    document_date = document_date or timezone.localdate()
+    if ClosedMonth.objects.filter(business_unit=business_unit, month=document_date.replace(day=1)).exists():
+        raise InvalidTransaction(
+            f"{document_date:%B %Y} is closed for {business_unit.name}. "
+            "Use a date in an open month, or ask Finance to reopen the month."
+        )
 
     entry = JournalEntry.objects.create(
         idempotency=idempotency,
         legal_entity=legal_entity,
         business_unit=business_unit,
         kind=kind,
+        document_date=document_date,
         status=JournalEntry.Status.DRAFT,
         currency="QAR",
         policy_label=TEST_POLICY_LABEL,

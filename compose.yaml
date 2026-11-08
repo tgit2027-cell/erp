@@ -37,7 +37,7 @@ services:
       DB_HOST: db
       DB_PORT: "5432"
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8000:10000"
     depends_on:
       db:
         condition: service_healthy
@@ -48,10 +48,10 @@ services:
       dockerfile: Dockerfile.frontend
     restart: unless-stopped
     environment:
-      DJANGO_PROXY_TARGET: http://backend:8000
+      DJANGO_PROXY_TARGET: http://backend:10000
       VITE_ALLOWED_HOSTS: localhost,127.0.0.1
     ports:
-      - "127.0.0.1:5000:5000"
+      - "127.0.0.1:5101:5000"
     depends_on:
       - backend
 

@@ -219,7 +219,8 @@ class PersonalReportingWorkspaceTests(ReportingFixtureMixin, TestCase):
         self.make_receipt(key="personal-purchase-fixture")
         self.grant_report_access(
             self.sales, ReportingPanel.PURCHASE_HISTORY,
-            [ReportDataCapability.PURCHASE_HISTORY, ReportDataCapability.SUPPLIER_COST], unit=self.unit,
+            [ReportDataCapability.PURCHASE_HISTORY, ReportDataCapability.SUPPLIER_COST, ReportDataCapability.EXPORT],
+            unit=self.unit,
         )
         payload = {**self.payload, "panels": ["purchase_history"]}
         saved = self.save(payload)

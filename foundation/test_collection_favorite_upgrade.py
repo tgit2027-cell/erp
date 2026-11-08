@@ -82,6 +82,9 @@ class CollectionFavoriteUpgradeTests(PurchasingFixtureMixin, TransactionTestCase
             self.assertEqual(len(mutations), 1)
             self.assertTrue(mutations[0].startswith('INSERT INTO "django_migrations"'),
                             "Upgrade modified more than migration history")
+            # The favourites API is today's code, which reads tables added after this upgrade
+            # (for example teams), so finish upgrading first; the rows checked above are untouched.
+            MigrationExecutor(connection).migrate(latest)
             owner = APIClient()
             owner.force_login(self.sales)
             other = APIClient()

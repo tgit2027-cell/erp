@@ -62,7 +62,7 @@ class FunctionFavoriteTests(TestCase):
         restricted = (
             "procurement.suppliers", "governance.presentation", "governance.purchasing-config",
             "governance.reporting", "governance.report-panels",
-            "governance.capacity-admin", "governance.capacity-audit", "governance.transfer-permissions",
+            "governance.capacity-admin", "governance.capacity-audit", "governance.transfer-permissions", "governance.users",
         )
         for key in restricted:
             self.assertEqual(ordinary.post("/api/favorites/", {"destination": key}, format="json").status_code, 403)
@@ -77,7 +77,7 @@ class FunctionFavoriteTests(TestCase):
         self.assertTrue(UserFavorite.objects.filter(user=self.roche_user, destination="governance.report-panels").exists())
         self.roche_user.is_staff = True
         self.roche_user.save(update_fields=["is_staff"])
-        for key in restricted[:-3]:
+        for key in restricted[:-4]:
             self.assertEqual(ordinary.post("/api/favorites/", {"destination": key}, format="json").status_code, 201 if key != "governance.report-panels" else 200)
         self.assertEqual(ordinary.post("/api/favorites/", {"destination": "governance.capacity-admin"}, format="json").status_code, 403)
         self.roche_user.is_superuser = True
@@ -102,7 +102,7 @@ class FunctionFavoriteTests(TestCase):
 
     def test_function_key_allowlist_excludes_aliases_placeholders_and_arbitrary_targets(self):
         owner = self.client_for(self.roche_user)
-        for key in ("governance.authority", "reports.panels", "finance.post", "hr.payroll", "inventory.receiving", "../purchasing.quote"):
+        for key in ("governance.authority", "reports.panels", "finance.post", "hr.payslips", "inventory.receiving", "../purchasing.quote"):
             self.assertEqual(owner.post("/api/favorites/", {"destination": key}, format="json").status_code, 400)
         self.assertTrue(all(len(key) <= 32 for key, _ in FUNCTION_DESTINATIONS))
         self.assertEqual(len(FUNCTION_DESTINATIONS), len({key for key, _ in FUNCTION_DESTINATIONS}))

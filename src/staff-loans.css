@@ -1,0 +1,16 @@
+.staff-loans-page .sp-status-waiting { border-color: #8a5a00; color: #8a5a00; }
+.staff-loans-page .sp-status-done { color: var(--muted); }
+.sl-table td small, .sl-table th small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.sl-table td { vertical-align: top; }
+.sl-table thead th:nth-child(3), .sl-table thead th:nth-child(5) { width: 110px; }
+.sl-history { margin-top: 6px; font-size: 12px; }
+.sl-history summary { cursor: pointer; color: var(--ink); }
+.sl-history ul { margin: 4px 0 0; padding-left: 16px; color: var(--muted); }
+.sl-inline { flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+.sl-inline input, .sl-inline select { min-height: 30px; font-size: 12px; }
+.sl-inline input[type="date"] { min-width: 0; width: 150px; }
+.sl-hint { margin: 0; }
+.sl-table td, .sl-table th { white-space: normal; }
+.sl-table td:last-child { width: 34%; }
+.sl-table td:last-child small { overflow-wrap: anywhere; }
+.sl-inline select { max-width: 100%; }

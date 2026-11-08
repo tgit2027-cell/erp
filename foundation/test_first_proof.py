@@ -61,4 +61,4 @@ class FirstProofTests(TestCase):
         call_command("seed_first_proof", stdout=out)
         text = out.getvalue()
         self.assertIn("Receipt with landed cost", text)
-        self.assertIn("22 of 22 checks match", text)
+        self.assertIn("26 of 26 checks match", text)

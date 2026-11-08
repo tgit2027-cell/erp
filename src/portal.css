@@ -1,0 +1,75 @@
+/* HR Portal: laid out like Tivoli's current HR portal (banner, search, tiles) in the ERP's own colours (Sam, 6 Nov 2026). */
+.hr-portal {
+  --hp-gold: var(--brand);
+  --hp-gold-strong: var(--brand-deep, var(--brand));
+  --hp-hero: var(--surface);
+  --hp-hero-2: var(--brand-soft, var(--surface));
+  --hp-hero-text: var(--text-strong);
+  --hp-hero-muted: var(--text-muted);
+  --hp-tile-border: var(--border-soft);
+}
+.hr-portal.is-home { padding: 0; overflow: hidden; }
+.hp-hero {
+  background: linear-gradient(180deg, var(--hp-hero-2), var(--hp-hero) 220px);
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--hp-hero-text);
+  padding: 32px 24px 28px;
+  text-align: center;
+}
+.hp-brand { display: block; text-align: left; font-weight: 800; font-size: 20px; letter-spacing: .01em; }
+.hp-brand em { display: block; font-style: normal; font-weight: 500; font-size: 12px; color: var(--hp-gold); }
+.hr-portal .hp-hero h2 { color: var(--hp-hero-text); font-size: clamp(24px, 4vw, 40px); font-weight: 800; line-height: 1.1; margin: 18px auto 6px; max-width: 620px; }
+.hp-hero > p { color: var(--hp-hero-muted); margin: 0 0 18px; }
+.hp-search { width: 100%; max-width: 960px; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); font: inherit; }
+.hp-tiles {
+  display: grid; gap: 14px; margin: 22px auto 0; max-width: 960px;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+}
+.hp-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  min-height: 118px; padding: 14px 10px; background: var(--surface); color: var(--hp-hero-text); box-shadow: var(--shadow-xs);
+  border: 1px solid var(--hp-tile-border); border-radius: var(--radius); cursor: pointer; font: inherit; font-weight: 700; font-size: 14px;
+}
+.hp-tile:hover, .hp-tile:focus-visible { border-color: var(--hp-gold); background: color-mix(in srgb, var(--hp-gold) 7%, var(--surface)); outline: none; }
+.hp-tile .hp-icon { width: 34px; height: 34px; color: var(--hp-gold); }
+.hp-tile small { color: var(--hp-hero-muted); font-weight: 500; font-size: 11px; }
+.hp-tile.is-soon { opacity: .62; }
+.hp-soon { color: var(--hp-hero-muted); margin-top: 14px; }
+.hr-portal.is-home .hp-block { padding: 20px 24px; }
+.hr-portal .hp-block h3 { margin: 0 0 12px; }
+.hp-overline { display: block; color: var(--text-muted); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
+.hp-to-read { background: color-mix(in srgb, var(--hp-gold) 10%, var(--surface)); }
+.hp-list { display: grid; gap: 12px; margin-top: 12px; }
+.hp-post { border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 14px 16px; background: var(--surface); margin-bottom: 12px; }
+.hp-post.is-pinned { border-color: var(--hp-gold); }
+.hp-post.is-withdrawn { opacity: .7; border-style: dashed; }
+.hp-post header h3 { margin: 4px 0; font-size: 17px; }
+.hp-post header small, .hp-post small { color: var(--text-muted); }
+.hp-kind { color: var(--hp-gold-strong); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.hp-body p { margin: 8px 0; white-space: pre-line; }
+.hp-when { margin: 6px 0; }
+.hp-picture { max-width: 100%; max-height: 360px; border-radius: var(--radius-sm); display: block; margin: 8px 0; }
+.hp-strip { display: flex; gap: 10px; overflow-x: auto; padding: 6px 0 10px; }
+.hp-strip img { height: 96px; width: auto; border-radius: 4px; filter: grayscale(.35); flex: 0 0 auto; }
+.hp-strip img:hover { filter: none; }
+.hp-post footer { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.hp-done { color: #2f6b45; font-weight: 600; }
+.hp-withdrawn { color: var(--text-muted); font-style: italic; }
+.hp-readers { columns: 2 220px; margin: 10px 0 0; padding-left: 18px; }
+.hp-readers li { color: #8c3f2e; }
+.hp-readers li.is-read { color: var(--text-body); }
+.hp-reply { background: var(--canvas); border-radius: var(--radius-sm); padding: 8px 10px; }
+.hp-upload { position: relative; overflow: hidden; display: inline-flex; align-items: center; }
+.hp-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.hp-events ul { padding-left: 18px; }
+@media (max-width: 560px) {
+  .hp-hero { padding: 22px 16px; }
+  .hp-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .hp-tile { min-height: 100px; font-size: 13px; }
+  .hr-portal.is-home .hp-block { padding: 16px; }
+}
+@media (prefers-color-scheme: dark) {
+  .hp-done { color: #68d391; }
+  .hp-readers li { color: #fc8181; }
+}
+

@@ -7,6 +7,10 @@ dependencies = [
     "Django==5.2.11",
     "djangorestframework==3.16.1",
     "psycopg[binary]==3.2.10",
+    "anthropic==2.3.0",
+    "Pillow==12.3.0",
+    "pypdfium2==5.13.0",
+    "openpyxl==3.1.5",
 ]
 
 [tool.uv]

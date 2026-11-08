@@ -68,6 +68,18 @@ function mockPages({ privileged = true } = {}) {
         units: units.map(unit => ({ ...unit, palette_value: unit.theme_palette })),
       } : { detail: "TEST ONLY staff denied" },
     };
+    if (get && url.pathname === "/api/governance/imports/") return {
+      status: privileged ? 200 : 403, data: privileged ? {
+        kinds: [{ kind: "customers", label: "Customers", columns: [{ heading: "Name", required: true, help: "TEST ONLY" }] },
+          { kind: "suppliers", label: "Suppliers", columns: [] }],
+        waiting: [{ id: 1, kind: "customers", kind_label: "Customers", status: "waiting", status_label: "Waiting for approval",
+          file_name: "TEST ONLY old customers with a long file name.xlsx", row_count: 1240, created: 0, prepared_by: "Admin",
+          prepared_at: "2026-11-03T09:00:00Z", decided_by: "", decided_at: "", decision_note: "",
+          sample: [{ row: 1, name: "TEST ONLY Ahmed Al-Kuwari", qid: "28763400123", contact_en: "", register_for: "retail", client_number: "C-004512", project_number: "" }],
+          can_approve: true, can_withdraw: false }],
+        recent: [], can_prepare: true, can_approve: true, policy: "TEST ONLY policy", opening_left: [],
+      } : { detail: "TEST ONLY denied" },
+    };
     if (get && url.pathname === "/api/governance/report-panels/") return {
       status: privileged ? 200 : 403, data: privileged ? {
         users: [], roles: [], panels: [{ code: "sales", label: "Sales" }], panel_grants: [],
@@ -123,7 +135,7 @@ const routes = {
   procurement: ["main", "commitments", "progress", "receipt", "packing", "registers", "suppliers"],
   inventory: ["main", "locations", "receipt", "commitments", "progress", "packing", "registers", "transfers", "capacity"],
   delivery: ["main", "quote", "handover", "quotes", "storage", "reservations", "deliveries", "returns"],
-  governance: ["main", "presentation", "purchasing-config", "reporting", "report-panels", "capacity-admin", "capacity-audit", "transfer-permissions"],
+  governance: ["main", "presentation", "purchasing-config", "reporting", "report-panels", "capacity-admin", "capacity-audit", "transfer-permissions", "users", "imports"],
   purchasing: ["main", "quote", "transactions", "registers"],
   reports: ["main"],
   finance: ["main"],

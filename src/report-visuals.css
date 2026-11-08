@@ -51,3 +51,16 @@
 .report-view-toggle button { min-height: 34px; padding: 0 14px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .report-view-toggle button[aria-pressed="true"] { background: var(--ink); color: #fff; }
 @media (forced-colors: active) { .viz-bar, .viz-key { forced-color-adjust: none; } }
+.viz-dashboard-head { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 12px; }
+.viz-dashboard-head .viz-intro { flex: 1 1 320px; margin: 0; }
+.viz-customize { padding: 16px; border: 1px solid var(--line); background: var(--sand, #f6f1e7); }
+.viz-customize h3 { margin: 0 0 4px; font-size: 16px; }
+.viz-customize p { margin: 0 0 10px; font-size: 13px; }
+.viz-customize ol { margin: 0 0 12px; padding: 0; list-style: none; display: grid; gap: 6px; max-width: 460px; }
+.viz-customize li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 10px; border: 1px solid var(--line); background: white; }
+.viz-customize label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+.viz-move { display: flex; gap: 4px; }
+.viz-move button { width: 30px; height: 30px; border: 1px solid var(--line); background: white; cursor: pointer; }
+.viz-move button:disabled { opacity: .35; cursor: default; }
+.viz-customize-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.report-export-none { align-self: center; max-width: 260px; }

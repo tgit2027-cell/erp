@@ -58,6 +58,6 @@ if __name__ == "__main__":
     # wider interface (for example a container that needs 0.0.0.0).
     vite_host = os.environ.get("DEV_BIND_HOST", "127.0.0.1")
     raise SystemExit(supervise([
-        ("Django", [sys.executable, "manage.py", "runserver", os.environ.get("DJANGO_BIND_ADDRESS", "127.0.0.1:8000"), "--noreload"]),
+        ("Django", [sys.executable, "manage.py", "runserver", "127.0.0.1:8000", "--noreload"]),
         ("Vite", ["npm", "run", "dev", "--", "--host", vite_host, "--port", "5000", "--strictPort"]),
     ]))

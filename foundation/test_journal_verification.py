@@ -14,7 +14,7 @@ from django.utils import timezone
 
 from .journal_verification import HEADER_FIELDS, LINE_FIELDS, _journal_discrepancies, verify_posted_journal_balances
 from .management.commands.snapshot_integrity import Command as IntegritySnapshotCommand
-from .models import IdempotencyRecord, JournalEntry, JournalLine, LedgerAccount, LegalEntity
+from .models import BusinessUnit, IdempotencyRecord, JournalEntry, JournalLine, LedgerAccount, LegalEntity
 from .test_transactions import TransactionFixtureMixin
 from .transaction_services import deliver_reserved_stock, reserve_stock
 
@@ -27,13 +27,16 @@ class PostedJournalVerificationTests(TransactionFixtureMixin, TransactionTestCas
     def entry_fixture(self, key, *, entity=None, debits=("100.00",), credits=("100.00",), posted=True):
         """Disposable fixture only: existing models/protections, no service mappings."""
         entity = entity or self.legal_entity
+        unit = entity.business_units.first() or BusinessUnit.objects.create(
+            legal_entity=entity, code=f"{entity.code}-unit"[:20], name="TEST ONLY — fixture unit",
+        )
         with transaction.atomic():
             operation = IdempotencyRecord.objects.create(
                 key=key, operation="test_journal_verification", payload_hash="0" * 64,
                 status=IdempotencyRecord.Status.COMPLETE, completed_at=timezone.now(),
             )
             entry = JournalEntry.objects.create(
-                idempotency=operation, legal_entity=entity, kind=JournalEntry.Kind.RECEIPT,
+                idempotency=operation, legal_entity=entity, business_unit=unit, kind=JournalEntry.Kind.RECEIPT,
                 description="TEST ONLY — journal verification fixture",
             )
             for side, values in (("debit", debits), ("credit", credits)):

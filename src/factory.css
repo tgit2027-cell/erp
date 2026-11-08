@@ -1,0 +1,80 @@
+/* Factory (Phase 2): job orders, raw materials and setup. Builds on the supplier-payments / staff-loans page styles. */
+.factory-page .fac-preview { margin: 0 0 14px; padding: 10px 14px; border: 1px dashed var(--brand); border-radius: 8px; background: var(--brand-soft); color: var(--ink); font-size: 13px; }
+.factory-page .fac-intro { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+.fac-form { margin-bottom: 18px; }
+.fac-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 14px; }
+.fac-grid .fac-wide { grid-column: 1 / -1; }
+.fac-hours { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.fac-lines { margin: 14px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.fac-lines legend { padding: 0 6px; font-size: 12px; font-weight: 600; color: var(--ink); }
+.fac-line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+.fac-line input, .fac-line select { min-height: 32px; font-size: 13px; flex: 1 1 200px; min-width: 0; }
+.fac-line .fac-code { flex: 0 0 90px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.fac-qty { flex: 0 0 90px !important; width: 90px; }
+.fac-unit { flex: 0 0 80px !important; width: 80px; }
+.fac-table td small, .fac-table th small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.fac-table td:last-child { width: auto; }
+.fac-toggle { padding: 0; border: 0; background: none; color: var(--brand-deep); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.fac-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fac-open > * { background: var(--brand-soft); }
+.fac-detail-row > td { padding: 0 !important; background: var(--paper); }
+.fac-detail { padding: 14px 16px 18px; border-left: 3px solid var(--brand); }
+.fac-meta { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+.fac-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.fac-block { margin-top: 12px; }
+.fac-block h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.fac-list { margin: 0; padding: 0; list-style: none; font-size: 13px; }
+.fac-list li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.fac-list li small { display: block; color: var(--muted); font-size: 11px; }
+.fac-list .lv-actions { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 6px; align-items: center; }
+.fac-cost { width: 100%; }
+.fac-cost tfoot td { font-size: 11px; color: var(--muted); white-space: normal; }
+.fac-total th, .fac-total td { font-weight: 700; }
+.fac-inline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.fac-inline input, .fac-inline select { min-height: 32px; font-size: 13px; max-width: 100%; }
+.fac-inline input[type="date"] { width: 150px; }
+.fac-check { display: inline-flex; gap: 4px; align-items: center; font-size: 13px; }
+.fac-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.fac-late { color: #a33 !important; font-weight: 600 !important; }
+.fac-switch { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin-bottom: 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.fac-switch.is-live { border-color: var(--green); }
+.fac-switch p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+@media (max-width: 760px) {
+  .fac-columns { grid-template-columns: 1fr; }
+  .fac-detail { padding: 12px 10px; }
+}
+/* Inside a job's detail the inner tables fit their column instead of the page-wide minimum. */
+.fac-detail .sp-table { min-width: 0; }
+.fac-cost { table-layout: auto; }
+.fac-detail-row > td { max-width: 0; white-space: normal; }
+.factory-page .fac-inline input, .factory-page .fac-inline select { flex: 1 1 170px; min-width: 0; min-height: 32px; padding: 4px 8px; border: 1px solid var(--line); background: white; font: inherit; font-size: 12px; }
+.factory-page .fac-inline input[type="date"] { flex: 0 0 150px; }
+.factory-page .fac-inline .fac-qty { flex: 0 0 100px !important; }
+.factory-page .fac-inline .fac-check input { flex: 0 0 auto; width: 16px; height: 16px; min-height: 0; padding: 0; }
+.factory-page .fac-inline .button, .factory-page .fac-list .button { min-height: 32px; margin-top: 0; padding: 0 14px; font-size: 12px; }
+.factory-page .fac-list .lv-actions input { min-height: 30px; padding: 4px 8px; border: 1px solid var(--line); font: inherit; font-size: 12px; }
+/* On a phone the job list becomes stacked cards so an opened job's detail uses the full screen width. */
+@media (max-width: 760px) {
+  .fac-jobs { min-width: 0; }
+  .fac-jobs thead { display: none; }
+  .fac-jobs, .fac-jobs tbody, .fac-jobs tr, .fac-jobs th, .fac-jobs td { display: block; width: auto; }
+  .fac-jobs tbody tr { border-bottom: 1px solid var(--line); }
+  .fac-jobs tbody th, .fac-jobs tbody td { padding: 4px 10px; border-bottom: 0; text-align: left; white-space: normal; }
+  .fac-jobs tbody th { padding-top: 10px; }
+  .fac-jobs tbody td:last-child { padding-bottom: 10px; }
+  .fac-jobs .fac-detail-row > td { max-width: none; padding: 0 !important; }
+  .fac-detail .sp-table-wrap, .fac-detail table { max-width: 100%; }
+  .fac-detail table.sp-table { display: block; overflow-x: auto; }
+}
+/* BOQ upload from Excel, long BOQs and warehouse deliveries. */
+.fac-upload { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 10px; font-size: 12px; color: var(--muted); }
+.fac-upload span { flex: 1 1 260px; }
+.fac-file { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+.fac-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.fac-file:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fac-uploaded { margin: 0 0 8px; font-size: 13px; color: var(--ink); }
+.fac-problems { margin: 0 0 10px; padding-left: 18px; max-height: 140px; overflow-y: auto; font-size: 12px; color: #a33; }
+.fac-boq-scroll { max-height: 420px; overflow-y: auto; margin-bottom: 8px; padding-right: 4px; }
+.fac-line-details { flex: 1 1 100%; margin: -2px 0 4px 96px; color: var(--muted); font-size: 11px; }
+.fac-hint { flex: 1 1 260px; font-size: 12px; color: var(--muted); }
+@media (max-width: 760px) { .fac-line-details { margin-left: 0; } }

@@ -270,6 +270,11 @@ class SensitiveSurfaceTests(ReportingFixtureMixin, TestCase):
         self.assertEqual(report.data["pagination"]["total_count"], 2)
         self.assert_no_cost_fields(report.data)
         for fmt in ("xlsx", "docx"):
+            refused = self.post(client, token, "/api/reports/sales/export/", {**query, "format": fmt})
+            self.assertEqual(refused.status_code, 403, "Seeing a report does not allow exporting it")
+        grant_report_data(actor=self.admin, target_user=self.sales,
+            capability=ReportDataCapability.EXPORT, business_unit=self.unit)
+        for fmt in ("xlsx", "docx"):
             response = self.post(client, token, "/api/reports/sales/export/", {**query, "format": fmt})
             self.assertEqual(response.status_code, 200)
             with ZipFile(BytesIO(response.content)) as office:

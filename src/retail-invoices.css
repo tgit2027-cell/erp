@@ -21,3 +21,6 @@
   .sidebar, .topbar, .rc-caveat, .rc-heading, .ri-document-actions { display: none !important; }
   .ri-document { border: 0; padding: 0; }
 }
+.ri-item { display: flex; gap: 10px; align-items: flex-start; }
+.ri-item img { width: 56px; height: 56px; object-fit: contain; border: 1px solid var(--line); background: white; flex: none; }
+.ri-lines td.ri-item { height: auto; overflow: visible; }

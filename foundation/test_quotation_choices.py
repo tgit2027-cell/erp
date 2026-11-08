@@ -84,10 +84,10 @@ class QuotationChoicesTests(PurchasingFixtureMixin, TestCase):
         self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(set(response.data), {
             "business_unit", "current_prices", "current_price_count", "customers", "customer_count", "role_assignments",
-            "discount_ceiling",
+            "discount_ceiling", "stock_discount_ceiling",
             "work_calendar", "test_only_label",
         })
-        self.assertEqual(response.data["discount_ceiling"], "10.00")
+        self.assertEqual((response.data["discount_ceiling"], response.data["stock_discount_ceiling"]), ("10.00", None))
         self.assertTrue(all(row["user_id"] == self.sales.pk for row in response.data["role_assignments"]))
         self.assertEqual([row["counterparty_id"] for row in response.data["customers"]], [self.customer.pk])
         row = next(row for row in response.data["current_prices"] if row["variant_id"] == self.variant.pk)
@@ -421,7 +421,7 @@ class LargeCatalogQuotationSearchTests(PurchasingFixtureMixin, TestCase):
         cls.bulk = variants
         SyntheticCounterparty.objects.bulk_create([
             SyntheticCounterparty(party_type="customer", code=f"TEST-CUST-BULK-{n:03d}", name=f"TEST ONLY Family {n}",
-                                  contact_en=f"Tel +974 5550 {n:04d}")
+                                  qid=f"2996350{n:04d}", contact_en=f"Tel +974 5550 {n:04d}", client_number=f"C-9{n:05d}")
             for n in range(70)
         ])
 

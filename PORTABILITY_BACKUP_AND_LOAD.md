@@ -53,7 +53,7 @@ Backups are restricted to `APP_ENV=demo`, the local `tivoli_erp_demo` PostgreSQL
 bash scripts/backup_local_demo.sh "$HOME/tivoli-erp-backups"
 ```
 
-Each bundle contains a custom-format PostgreSQL dump, a schema/migration/table-row-count manifest, SHA-256 checksums, and—if the configured media directory contains files—an archive plus a file-count/byte-count manifest. The only uploaded files are supplier KYC documents (`SupplierKycDocument.file`, PDF/PNG/JPG up to 10 MB), stored under the configured `DJANGO_MEDIA_ROOT` and downloaded only through a signed-in API endpoint, never served directly. It rejects symbolic links.
+Each bundle contains a custom-format PostgreSQL dump, a schema/migration/table-row-count manifest, SHA-256 checksums, and—if the configured media directory contains files—an archive plus a file-count/byte-count manifest. Uploaded files are supplier KYC documents (`SupplierKycDocument.file`, PDF/PNG/JPG up to 10 MB), item photos (`Item.photo`, PNG/JPG/WebP up to 5 MB), expense receipts (`Expense.receipt`, PDF/PNG/JPG up to 10 MB) and files shared in internal chat (`ChatAttachment.file`, up to 25 MB, kept 3 years; see INTERNAL_CHAT.md), all stored under the configured `DJANGO_MEDIA_ROOT` and downloaded only through signed-in API endpoints, never served directly. It rejects symbolic links.
 
 The bundle is created with restrictive local permissions, but is **not encrypted**. A database backup includes Django account password hashes and must be treated as sensitive even though the current records are synthetic. Keep it outside Git, do not share it, and use an operator-approved encryption method and key management before moving it off the local machine. No backup key or credential is stored in source.
 
@@ -159,7 +159,7 @@ The single-request column is the response time one user sees. The burst column r
 - Production hosting provider, region, network exposure, identity configuration, and production deployment process.
 - Approved backup location, retention, off-site replication, encryption method/key ownership and rotation, access policy, and restore authorization.
 - Recovery-point and recovery-time objectives (RPO/RTO), backup frequency, and whether operational production data should be included in a future production backup design.
-- Production media/attachment storage and retention. Supplier KYC documents are the only uploads today; production storage, retention and malware scanning are not set up.
+- Production media/attachment storage and retention. Supplier KYC documents, item photos, expense receipts and chat files are the uploads today; chat files have a 3-year retention command, but production storage, backup retention and malware scanning are not set up.
 - Whether a future load test should include real network/TLS hosting, longer soak runs, large full-result Excel/Word export measurements, or a company-approved workload beyond the user-specified synthetic dimensions.
 
 Do not infer these choices from the local test results.

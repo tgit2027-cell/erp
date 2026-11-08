@@ -81,7 +81,7 @@ test("real session: every privileged child, scoped BU/theme, section/function Fa
     const destinations = await b.evaluate(`Array.from(document.querySelectorAll("[data-workspace-link]"))
       .map(n=>n.dataset.workspaceLink)`);
     assert.deepEqual([...new Set(destinations)].sort(), Object.keys(navigationContent).sort(),
-      "All 49 current child destinations require actual content witnesses");
+      "All 50 current child destinations require actual content witnesses");
     const contentEvidence = [];
     for (const route of destinations) {
       const [section, child] = route.split("/");
@@ -102,7 +102,7 @@ test("real session: every privileged child, scoped BU/theme, section/function Fa
       }
       assert.equal(await isVisible(b, witness), true, `${route}: actual focused function content`);
       if (route === "hr/main") {
-        assert.match(await b.evaluate('document.querySelector(".planned-panel").innerText'), /PLANNED.*NOT IMPLEMENTED/);
+        assert.match(await b.evaluate('document.querySelector(".staff-records").innerText'), /STAFF RECORDS/);
         assert.equal(await isVisible(b, ".pw-transactions"), false);
       }
       if (["delivery/quotes", "delivery/storage", "delivery/reservations", "delivery/deliveries"].includes(route)) {

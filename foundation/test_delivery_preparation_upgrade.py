@@ -61,6 +61,9 @@ class DeliveryPreparationUpgradeTests(PurchasingFixtureMixin, TransactionTestCas
                 r"^\s*(INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|TRUNCATE)\b", query["sql"], re.I)]
             self.assertEqual(len(mutations), 1)
             self.assertTrue(mutations[0].startswith('INSERT INTO "django_migrations"'))
+            # The favourites API is today's code, which reads tables added after this upgrade
+            # (for example teams), so finish upgrading first; the rows checked above are untouched.
+            MigrationExecutor(connection).migrate(latest)
             owner, other = APIClient(), APIClient()
             owner.force_login(self.sales)
             other.force_login(self.roche_user)

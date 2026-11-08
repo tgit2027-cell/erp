@@ -423,7 +423,7 @@ test("Inventory sidebar children are stable function destinations rather than sc
   const inventory = sidebarSections({ isStaff: false, isSuperuser: false, canManageReportPanels: false })
     .find((section) => section.id === "inventory");
   assert.ok(inventory);
-  assert.deepEqual(inventory.children.map((child) => child.id), ["main", "locations", "receipt", "commitments", "progress", "packing", "registers", "transfers", "capacity"]);
+  assert.deepEqual(inventory.children.map((child) => child.id), ["main", "locations", "receipt", "commitments", "progress", "packing", "registers", "transfers", "capacity", "counts", "low-stock", "stock-value", "items", "catalogue"]);
   assert.ok(inventory.children.every((child) => !("selector" in child)));
 });
 

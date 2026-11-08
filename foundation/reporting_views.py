@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from rest_framework import status
-from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
+from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,6 +21,14 @@ from .models import (
     ReportingPanel,
     ReportingRole,
     ReportingRoleMembership,
+)
+from .report_share_links import (
+    ShareLinkNotFound,
+    create_share_link,
+    my_share_links,
+    open_share_link,
+    revoke_share_link,
+    serialize_link,
 )
 from .reporting_visuals import build_report_visual
 from .reporting_exports import render_report_export, report_export_manifest
@@ -43,7 +51,11 @@ from .reporting_services import (
     grant_report_data,
     list_reporting_configuration,
     list_report_panel_management,
+    dashboard_layout,
     record_report_export,
+    require_report_export,
+    reset_dashboard_layout,
+    save_dashboard_layout,
     require_reporting_admin,
     require_reporting_panel_manager,
     revoke_reporting_access,
@@ -65,6 +77,8 @@ def _service(function, **kwargs):
         raise PermissionDenied(str(error)) from error
     except ReportingNotConfigured as error:
         raise ReportingConflict(str(error)) from error
+    except ShareLinkNotFound as error:
+        raise NotFound(str(error)) from error
     except ReportingValidationError as error:
         raise ValidationError({"detail": str(error)}) from error
     except ReportingError as error:
@@ -105,6 +119,20 @@ class ReportPanelsView(APIView):
         panels = _service(available_report_panels, actor=request.user)
         scopes = _service(available_report_scopes, actor=request.user)
         return Response({"panels": panels, "scopes": scopes})
+
+
+@method_decorator(never_cache, name="dispatch")
+class ReportDashboardLayoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(_service(dashboard_layout, actor=request.user))
+
+    def put(self, request):
+        return Response(_service(save_dashboard_layout, actor=request.user, panels=_payload(request).get("panels")))
+
+    def delete(self, request):
+        return Response(_service(reset_dashboard_layout, actor=request.user))
 
 
 @method_decorator(never_cache, name="dispatch")
@@ -221,14 +249,21 @@ class DeliveryLineDetailView(APIView):
         )
 
 
+EXPORT_CONTENT_TYPES = {
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "pdf": "application/pdf",
+}
+
+
 class ReportExportView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, panel):
         payload = _payload(request)
         file_format = payload.get("format")
-        if file_format not in ("xlsx", "docx"):
-            raise ValidationError({"format": "Choose xlsx or docx."})
+        if file_format not in EXPORT_CONTENT_TYPES:
+            raise ValidationError({"format": "Choose xlsx, docx or pdf."})
         report = _service(
             build_report,
             actor=request.user,
@@ -236,6 +271,7 @@ class ReportExportView(APIView):
             query_params=payload,
             paginate=False,
         )
+        _service(require_report_export, actor=request.user, report=report)
         content = render_report_export(report, file_format)
         manifest_fields, manifest_row_count = report_export_manifest(report)
         _service(
@@ -248,15 +284,48 @@ class ReportExportView(APIView):
             fields=manifest_fields,
             row_count=manifest_row_count,
         )
-        content_type = (
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            if file_format == "xlsx"
-            else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
-        response = HttpResponse(content, content_type=content_type)
+        response = HttpResponse(content, content_type=EXPORT_CONTENT_TYPES[file_format])
         response["Content-Disposition"] = f'attachment; filename="synthetic-{panel}-report.{file_format}"'
         response["Cache-Control"] = "private, no-store"
         return response
+
+
+@method_decorator(never_cache, name="dispatch")
+class ReportShareLinksView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"links": _service(my_share_links, actor=request.user)})
+
+    def post(self, request):
+        payload = _payload(request)
+        link, token = _service(
+            create_share_link,
+            actor=request.user,
+            panel=payload.get("panel"),
+            filters=payload,
+            note=payload.get("note", ""),
+        )
+        body = serialize_link(link)
+        # The token is returned once here and only its hash is stored.
+        body["url"] = request.build_absolute_uri(f"/?shared_report={token}#/reports/main")
+        return Response(body, status=status.HTTP_201_CREATED)
+
+
+class ReportShareLinkRevokeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, link_id):
+        link = _service(revoke_share_link, actor=request.user, link_id=link_id)
+        return Response(serialize_link(link))
+
+
+@method_decorator(never_cache, name="dispatch")
+class SharedReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, token):
+        return Response(_service(open_share_link, actor=request.user, token=token))
 
 
 class ReportingConfigurationView(APIView):

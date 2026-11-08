@@ -8,21 +8,41 @@ from .models import (
     Item,
     Location,
     LocationCapacityGrant,
+    TeamMember,
     UserActionGrant,
     Variant,
 )
 
 
-def active_grants(user, action=None):
+def team_ids(user):
+    """The open teams this person belongs to."""
+    return TeamMember.objects.filter(user=user, team__is_active=True).values("team_id")
+
+
+def active_grants(user, action=None, *, personal_only=False):
+    """Live permissions: given to the person, plus those of every open team they are in."""
     now = timezone.now()
+    owner = Q(user=user) if personal_only else Q(user=user) | Q(team_id__in=team_ids(user))
     grants = UserActionGrant.objects.filter(
-        user=user,
+        owner,
         revoked_at__isnull=True,
         starts_at__lte=now,
     ).filter(Q(ends_at__isnull=True) | Q(ends_at__gt=now))
     if action:
         grants = grants.filter(action=action)
     return grants.select_related("business_unit", "business_unit__legal_entity")
+
+
+def holders_filter(business_unit=None):
+    """A user filter for everyone who holds a live permission (theirs or a team's), optionally in one unit."""
+    now = timezone.now()
+    live = UserActionGrant.objects.filter(revoked_at__isnull=True, starts_at__lte=now) \
+        .filter(Q(ends_at__isnull=True) | Q(ends_at__gt=now))
+    if business_unit is not None:
+        live = live.filter(business_unit=business_unit)
+    teams = live.filter(team__isnull=False, team__is_active=True).values("team_id")
+    return Q(pk__in=live.filter(user__isnull=False).values("user_id")) | Q(
+        pk__in=TeamMember.objects.filter(team_id__in=teams).values("user_id"))
 
 
 def permitted_units(user):

@@ -28,7 +28,7 @@ async function run(options, callback) {
 test("native Tab Enter and Space preserve focus order disclosure and hidden-child exclusion", async () => {
   await run({}, async (b) => {
     for (const selector of [
-      '.sidebar .nav-row > .nav-item', '[title="Retail & Sales"].nav-section-toggle',
+      '.sidebar .nav-row > .nav-item', '.sidebar .nav-chat', '[title="Retail & Sales"].nav-section-toggle',
       '.section-navigation-group:nth-child(1) .section-navigation-favorite .favorite-toggle',
       '[title="Procurement & Imports"].nav-section-toggle',
       '.section-navigation-group:nth-child(2) .section-navigation-favorite .favorite-toggle', inventory,
@@ -119,7 +119,9 @@ test("native BU selection retains active inventory child and uses only current s
       colors.push(await b.evaluate('getComputedStyle(document.querySelector(".sidebar")).backgroundColor'));
       assert.equal(new URL(`http://fixture.invalid${b.calls.filter(c => c.path === "/api/stock-balances/").at(-1).query}`).searchParams.get("unit"), String(id));
     }
-    assert.equal(new Set(colors).size, 3, "All three actual BU sidebar themes remain distinct");
+    // Warehouse pages keep the warehouse area's yellow whichever showroom is selected (Sam, 6 Nov 2026).
+    assert.equal(new Set(colors).size, 1, "The warehouse area colour stays the same across business units");
+    assert.equal(await b.evaluate("document.documentElement.dataset.areaTheme"), "warehouse");
     assert.deepEqual(b.calls.filter(c => c.method !== "GET").map(c => c.path),
       ["/api/units/2/select/", "/api/units/3/select/"]);
     await b.screenshot("desktop-natuzzi");

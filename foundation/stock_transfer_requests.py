@@ -172,6 +172,10 @@ def decide_transfer_request(*, actor, transfer_request, idempotency_key, approve
     locked.updated_at = now
     locked.save(update_fields=["status", "decided_by", "decided_at", "rejection_reason", "updated_at"])
     _record(locked, actor, Status.SUBMITTED, reason)
+    if hasattr(locked, "factory_request"):
+        from .factory import warehouse_decided
+
+        warehouse_decided(locked, actor, approve, reason)
     return _complete(operation, _result(locked))
 
 
@@ -247,6 +251,15 @@ def dispatch_transfer_request(*, actor, transfer_request, idempotency_key):
 @transaction.atomic
 def receive_transfer_request(*, actor, transfer_request, idempotency_key):
     _require_transfer_actor(actor, transfer_request.business_unit, Action.EXECUTE_TRANSFER)
+    return receive_locked_request(transfer_request, actor, idempotency_key)
+
+
+def receive_locked_request(transfer_request, actor, idempotency_key):
+    """Move the goods into the destination; the caller has checked the actor may confirm arrival.
+
+    The factory confirms its own deliveries this way (with its run-factory permission), and a delivery to
+    the factory is then used on its job order.
+    """
     payload = {"request": transfer_request.pk}
     operation, created = _begin_idempotent_operation(idempotency_key, "transfer_request_receive", payload)
     if not created:
@@ -293,6 +306,10 @@ def receive_transfer_request(*, actor, transfer_request, idempotency_key):
     locked.updated_at = now
     locked.save(update_fields=["status", "received_by", "received_at", "updated_at"])
     _record(locked, actor, Status.IN_TRANSIT)
+    if locked.factory_issues.exists():
+        from .factory import use_received_materials
+
+        use_received_materials(locked)
     return _complete(operation, _result(locked))
 
 

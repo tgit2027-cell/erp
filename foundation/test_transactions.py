@@ -387,6 +387,7 @@ class TransactionPostgresConcurrencyTests(TransactionFixtureMixin, TransactionTe
                 entry = JournalEntry.objects.create(
                     idempotency=request,
                     legal_entity=entity,
+                    business_unit=entity.business_units.first(),
                     kind=JournalEntry.Kind.RECEIPT,
                     description="TEST ONLY — deliberately unbalanced journal",
                 )

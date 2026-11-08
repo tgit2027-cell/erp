@@ -6,6 +6,8 @@ export type GovernanceWorkspaceProps = {
   isStaff: boolean;
   isSuperuser: boolean;
   canManageReportPanels: boolean;
+  canManageUsers?: boolean;
+  canImport?: boolean;
   onManageReportPanels?: () => void;
   presentation?: ReactNode;
   reportPanelControls?: ReactNode;
@@ -13,6 +15,10 @@ export type GovernanceWorkspaceProps = {
   capacityAdministration?: ReactNode;
   capacityAudit?: ReactNode;
   transferPermissions?: ReactNode;
+  userAdmin?: ReactNode;
+  imports?: ReactNode;
+  approvalLimits?: ReactNode;
+  emailAlerts?: ReactNode;
   focusedChild?: string;
 };
 
@@ -22,6 +28,8 @@ export default function GovernanceWorkspace({
   isStaff,
   isSuperuser,
   canManageReportPanels,
+  canManageUsers,
+  canImport,
   onManageReportPanels,
   presentation,
   reportPanelControls,
@@ -29,6 +37,10 @@ export default function GovernanceWorkspace({
   capacityAdministration,
   capacityAudit,
   transferPermissions,
+  userAdmin,
+  imports,
+  approvalLimits,
+  emailAlerts,
   focusedChild = "main",
 }: GovernanceWorkspaceProps) {
   const workspaceTitle: Record<string, string> = {
@@ -40,6 +52,10 @@ export default function GovernanceWorkspace({
     "capacity-admin": "Capacity locations & assignments",
     "capacity-audit": "Warehouse capacity audit",
     "transfer-permissions": "Stock transfer permissions",
+    users: "Users and permissions",
+    imports: "Go-live imports",
+    "approval-limits": "Approval limits",
+    alerts: "Alerts",
   };
   const showAuthority = focusedChild === "main" || focusedChild === "authority";
   const showPresentation = focusedChild === "presentation" && isStaff;
@@ -48,7 +64,11 @@ export default function GovernanceWorkspace({
   const showReportPanels = focusedChild === "report-panels" && canManageReportPanels;
   const showCapacity = focusedChild === "capacity-admin" && isSuperuser;
   const showCapacityAudit = focusedChild === "capacity-audit" && isSuperuser;
-  const showTransferPermissions = focusedChild === "transfer-permissions" && isSuperuser;
+  const showTransferPermissions = focusedChild === "transfer-permissions" && (canManageUsers ?? isSuperuser);
+  const showUsers = focusedChild === "users" && (canManageUsers ?? isSuperuser);
+  const showImports = focusedChild === "imports" && (canImport ?? isSuperuser);
+  const showApprovalLimits = focusedChild === "approval-limits" && (canManageUsers ?? isSuperuser);
+  const showEmailAlerts = focusedChild === "alerts" && (canManageUsers ?? isSuperuser);
   return (
     <div className="governance-workspace" data-workspace-section="governance" data-workspace-child={focusedChild} data-workspace-view={`governance/${focusedChild}`}>
       <header className="governance-hero">
@@ -85,8 +105,9 @@ export default function GovernanceWorkspace({
         <section className="governance-section-block" id="governance-pane-palettes" data-governance-pane="palettes" aria-labelledby="governance-presentation-heading">
           <div className="governance-section-heading">
             <span className="governance-section-index">01</span>
-            <div><span className="eyebrow">STAFF CONFIGURATION</span><h2 id="governance-presentation-heading">Presentation identity</h2><p>Palette assignment changes the visual treatment for a unit. It does not alter authorization.</p></div>
+            <div><span className="eyebrow">MASTER ADMIN CONFIGURATION</span><h2 id="governance-presentation-heading">Presentation identity</h2><p>Palette assignment changes the visual treatment for a unit. It does not alter authorization.</p></div>
           </div>
+          {!isSuperuser && <p className="sp-hint" role="note">Only the Master Admin can change palettes. You can see them here.</p>}
           {presentation}
         </section>
       )}
@@ -142,7 +163,27 @@ export default function GovernanceWorkspace({
         {transferPermissions}
       </section>}
 
-      {focusedChild === "main" && !isStaff && !isSuperuser && !canManageReportPanels && (
+      {showUsers && <section className="governance-section-block" id="governance-pane-users" data-governance-pane="users" aria-labelledby="governance-users-heading">
+        <div className="governance-section-heading"><span className="governance-section-index">07</span><div><span className="eyebrow">MASTER ADMIN AND GENERAL ADMIN</span><h2 id="governance-users-heading">Everything a person may do</h2><p>Pick a person to choose their access level (Master Admin down to Sales). Only a Master Admin can make admins or a custom user with permissions set one by one. Every change is recorded.</p></div></div>
+        {userAdmin}
+      </section>}
+
+      {showImports && <section className="governance-section-block" id="governance-pane-imports" data-governance-pane="imports" aria-labelledby="governance-imports-heading">
+        <div className="governance-section-heading"><span className="governance-section-index">08</span><div><span className="eyebrow">PREPARE AND APPROVE</span><h2 id="governance-imports-heading">Bring records over from the old system</h2><p>Download the template, fill it in and upload it. Every row is checked first, and nothing is created until a second person approves the file.</p></div></div>
+        {imports}
+      </section>}
+
+      {showApprovalLimits && <section className="governance-section-block" id="governance-pane-approval-limits" data-governance-pane="approval-limits" aria-labelledby="governance-limits-heading">
+        <div className="governance-section-heading"><span className="governance-section-index">09</span><div><span className="eyebrow">MASTER ADMIN AND GENERAL ADMIN</span><h2 id="governance-limits-heading">Discounts and approval amounts</h2><p>Set how much discount each role and each person may give and the most each person may approve, per business unit. Above a person's limit, someone with a higher limit approves.</p></div></div>
+        {approvalLimits}
+      </section>}
+
+      {showEmailAlerts && <section className="governance-section-block" id="governance-pane-alerts" data-governance-pane="alerts" aria-labelledby="governance-alerts-heading">
+        <div className="governance-section-heading"><span className="governance-section-index">10</span><div><span className="eyebrow">MASTER ADMIN AND GENERAL ADMIN</span><h2 id="governance-alerts-heading">Who receives which alerts</h2><p>Assign the people who receive alerts, the email address each one uses and the types of alert they receive. Only General Admins and Master Admins manage this.</p></div></div>
+        {emailAlerts}
+      </section>}
+
+      {focusedChild === "main" && !isStaff && !isSuperuser && !canManageReportPanels && !canManageUsers && !canImport && (
         <div className="governance-context-state governance-no-tools" role="status">
           <strong>No governance controls are available to this account.</strong>
           <p>Use the existing Reports and Favorites destinations available to you. This screen does not provide a path to request or infer additional authority.</p>

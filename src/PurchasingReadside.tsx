@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   getPurchasingPagerState,
   getPurchasingReadsideState,
@@ -154,7 +154,7 @@ async function getJson<T>(path: string): Promise<T> {
   return body as T;
 }
 
-function useReadPage<T>(url: string | null, page: number, refreshKey = 0): ReadState<PageResult<T>> {
+function useReadPage<T>(url: string | null, page: number): ReadState<PageResult<T>> {
   const [state, setState] = useState<ReadState<PageResult<T>>>(idle);
   useEffect(() => {
     if (!url) {
@@ -177,7 +177,7 @@ function useReadPage<T>(url: string | null, page: number, refreshKey = 0): ReadS
         });
       });
     return () => { active = false; };
-  }, [url, page, refreshKey]);
+  }, [url, page]);
   return state;
 }
 
@@ -477,7 +477,6 @@ export default function PurchasingReadside({
   selectedUnitId,
   selectedUnitName,
   isStaff,
-  csrfToken,
   onOpenReports,
   focusedTab,
   enabled = true,
@@ -486,7 +485,6 @@ export default function PurchasingReadside({
   selectedUnitId: number;
   selectedUnitName: string;
   isStaff: boolean;
-  csrfToken: string;
   onOpenReports: () => void;
   focusedTab?: TabId;
   enabled?: boolean;
@@ -505,12 +503,6 @@ export default function PurchasingReadside({
     counterparties: 1,
   });
   const [selected, setSelected] = useState<Partial<Record<TabId, string>>>({});
-  const [counterpartyRefreshKey, setCounterpartyRefreshKey] = useState(0);
-  const [customerCode, setCustomerCode] = useState("");
-  const [customerName, setCustomerName] = useState("");
-  const [customerSaving, setCustomerSaving] = useState(false);
-  const [customerMessage, setCustomerMessage] = useState("");
-  const [customerError, setCustomerError] = useState("");
   useEffect(() => {
     setPages({ receipts: 1, quotes: 1, storage: 1, reservations: 1, deliveries: 1, counterparties: 1 });
     setSelected({});
@@ -532,7 +524,6 @@ export default function PurchasingReadside({
   const counterparties = useReadPage<Counterparty>(
     !enabled || !tabEnabled("counterparties") || deliveryMode || retailMode || warehouseMode || !shouldRequestPurchasingCounterparties(isStaff) ? null : "/api/governance/purchasing/counterparties/",
     pageFor("counterparties"),
-    counterpartyRefreshKey,
   );
 
   const detailUrl = (path: string, id: string | undefined, params: Record<string, string | number> = {}) =>
@@ -552,42 +543,6 @@ export default function PurchasingReadside({
   const deliveryDetail = useReadDetail<{ delivery: Delivery }>(
     enabled && tabEnabled("deliveries") && !retailMode && !warehouseMode && !procurementMode ? detailUrl("/api/reports/sales/deliveries/", selected.deliveries, selectUnit) : null,
   );
-  const createCustomer = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const code = customerCode.trim().toUpperCase();
-    const name = customerName.trim();
-    if (!code.startsWith("TEST-CUST-") || !name.startsWith("TEST ONLY")) {
-      setCustomerError("Use a customer code beginning TEST-CUST- and a name beginning TEST ONLY. Only synthetic demo customers are allowed.");
-      setCustomerMessage("");
-      return;
-    }
-    setCustomerSaving(true);
-    setCustomerError("");
-    setCustomerMessage("");
-    try {
-      const response = await fetch("/api/governance/purchasing/counterparties/", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
-        body: JSON.stringify({ party_type: "customer", code, name }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(typeof body?.detail === "string" ? body.detail : `Customer creation failed (${response.status}).`);
-      }
-      setCustomerMessage(`Synthetic customer ${body.code ?? code} created.`);
-      setCustomerCode("");
-      setCustomerName("");
-      setPages((current) => ({ ...current, counterparties: 1 }));
-      setSelected((current) => ({ ...current, counterparties: undefined }));
-      setCounterpartyRefreshKey((current) => current + 1);
-    } catch (reason) {
-      setCustomerError(reason instanceof Error ? reason.message : "Customer could not be created.");
-    } finally {
-      setCustomerSaving(false);
-    }
-  };
-
   const counterpartyDetail = useReadDetail<Counterparty>(
     enabled && tabEnabled("counterparties") && !deliveryMode && !retailMode && !warehouseMode && shouldRequestPurchasingCounterparties(isStaff)
       ? detailUrl("/api/governance/purchasing/counterparties/", selected.counterparties)
@@ -720,19 +675,7 @@ export default function PurchasingReadside({
               ]} />;
             }} />}
           {renderedTab === "counterparties" && (isStaff
-            ? <>
-              <section className="pr-customer-create" aria-labelledby="pr-customer-create-title">
-                <div><span className="pr-kicker">STAFF-ONLY · SYNTHETIC DATA</span><h2 id="pr-customer-create-title">Create customer</h2>
-                  <p>Use fictional demo records only. Customer code must start with TEST-CUST- and name with TEST ONLY.</p></div>
-                <form onSubmit={(event) => void createCustomer(event)}>
-                  <label htmlFor="pr-new-customer-code">Customer code<input id="pr-new-customer-code" value={customerCode} onChange={(event) => setCustomerCode(event.target.value)} placeholder="TEST-CUST-ACME" maxLength={40} required disabled={customerSaving} /></label>
-                  <label htmlFor="pr-new-customer-name">Customer name<input id="pr-new-customer-name" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="TEST ONLY Acme Customer" maxLength={120} required disabled={customerSaving} /></label>
-                  <button type="submit" disabled={customerSaving}>{customerSaving ? "Creating…" : "Create synthetic customer"}</button>
-                </form>
-                {customerError && <p className="pr-error" role="alert">{customerError}</p>}
-                {customerMessage && <p className="pr-notice" role="status">{customerMessage} The directory is refreshing.</p>}
-              </section>
-              <PurchasingCollection title="Synthetic counterparties" subtitle="STAFF-ONLY DIRECTORY" label="counterparties"
+            ? <PurchasingCollection title="Synthetic counterparties" subtitle="STAFF-ONLY DIRECTORY" label="counterparties"
               state={counterparties} emptyMessage="The staff-scoped synthetic directory returned no counterparties."
               columns={[
                 { label: "Party type", render: (row) => row.party_type },
@@ -743,7 +686,6 @@ export default function PurchasingReadside({
                 const row = data as Counterparty;
                 return <DetailFields fields={[["Type", row.party_type], ["Code", row.code], ["Name", row.name]]} />;
               }} />
-              </>
             : <section className="pr-collection"><header className="pr-section-head"><div><span className="pr-kicker">STAFF-ONLY DIRECTORY</span><h2>Counterparties</h2></div><span className="pr-readonly">NO REQUEST</span></header><p className="pr-notice">Staff access is required. This account did not request the counterparty directory.</p></section>
           )}
         </div>

@@ -88,12 +88,7 @@ FREE_STORAGE_MONTHS = 1
 # Owner decision N2: a quote hold lasts three working days unless shortened.
 DEFAULT_HOLD_WORKING_DAYS = 3
 
-DISCOUNT_CEILINGS = {
-    BusinessUnitRoleAssignment.Role.SALESPERSON: Decimal("10.00"),
-    BusinessUnitRoleAssignment.Role.MANAGER: Decimal("20.00"),
-    BusinessUnitRoleAssignment.Role.COMMERCIAL_GM: Decimal("30.00"),
-    BusinessUnitRoleAssignment.Role.CEO: Decimal("50.00"),
-}
+# Discount ceilings per role: see approval_limits.py.
 ROLE_ORDER = {
     BusinessUnitRoleAssignment.Role.SALESPERSON: 1,
     BusinessUnitRoleAssignment.Role.MANAGER: 2,
@@ -159,10 +154,22 @@ def _require_demo_actor(user, business_unit, *, require_order_grant=True):
 
 def require_supplier_approved(supplier):
     """Refuse a supplier whose KYC file exists but is not approved yet."""
-    kyc = SupplierKyc.objects.filter(supplier=supplier).only("status").first()
+    kyc = SupplierKyc.objects.filter(supplier=supplier).only("status", "documents_due").first()
     if kyc is not None and kyc.status != SupplierKyc.Status.APPROVED:
         raise InvalidTransaction(
             f"Supplier {supplier.code} is not approved yet (KYC: {SupplierKyc.Status(kyc.status).label.lower()})."
+        )
+    if kyc is not None:
+        require_supplier_not_frozen(supplier, kyc)
+
+
+def require_supplier_not_frozen(supplier, kyc=None):
+    """Refuse a supplier brought over at go-live whose KYC documents are past their deadline."""
+    kyc = kyc or SupplierKyc.objects.filter(supplier=supplier).only("documents_due").first()
+    if kyc is not None and kyc.documents_due and kyc.documents_due < timezone.localdate():
+        raise InvalidTransaction(
+            f"Supplier {supplier.code} is frozen: its KYC documents were due by {kyc.documents_due:%d %b %Y}. "
+            "Attach them on the supplier file to use it again."
         )
 
 
@@ -175,9 +182,17 @@ def _require_staff_demo(user, business_unit=None, *synthetic_objects):
         or not DemoUserMarker.objects.filter(user=user, is_synthetic=True).exists()
     ):
         raise WorkflowPermissionDenied("A synthetic Django staff account is required.")
+
     objects = ([business_unit] if business_unit is not None else []) + list(synthetic_objects)
     if objects:
         _require_demo(*objects)
+
+
+def _require_setup_admin(user, business_unit=None, *synthetic_objects):
+    """The setup lock (Sam, 5 Nov 2026): only the Master Admin changes workflow setup."""
+    _require_staff_demo(user, business_unit, *synthetic_objects)
+    if not user.is_superuser:
+        raise WorkflowPermissionDenied("Only the Master Admin can change the ERP's setup.")
 
 
 def _primary_role(roles):
@@ -186,20 +201,44 @@ def _primary_role(roles):
     return max(roles, key=lambda role: ROLE_ORDER.get(role, 0))
 
 
-def _price_approver_role(roles, discount):
+def _ceilings(business_unit):
+    from .approval_limits import discount_ceilings
+
+    return discount_ceilings(business_unit)
+
+
+def _price_approver_role(roles, discount, business_unit, *, user=None, kind=None):
+    ceilings = _ceilings(business_unit)
     eligible = [
         role for role in roles
-        if role in DISCOUNT_CEILINGS and DISCOUNT_CEILINGS[role] >= discount
+        if role in ceilings and ceilings[role] >= discount
     ]
     if eligible:
-        return max(eligible, key=lambda role: DISCOUNT_CEILINGS[role])
+        return max(eligible, key=lambda role: ceilings[role])
     if discount == 0 and BusinessUnitRoleAssignment.Role.BU_GM in roles:
         return BusinessUnitRoleAssignment.Role.BU_GM
+    own = _own_stock_discount(user, business_unit, kind)
+    if roles and own is not None and own >= discount:
+        return _primary_role(roles)
     raise WorkflowPermissionDenied("No assigned price-approval role can approve this discount.")
 
 
-def _discount_cap(roles):
-    return max((DISCOUNT_CEILINGS.get(role, Decimal("0.00")) for role in roles), default=Decimal("0.00"))
+def _own_stock_discount(user, business_unit, kind):
+    """The person's own discount for selling stock items, when an admin has set one."""
+    if user is None or kind != SalesQuote.Kind.STOCK:
+        return None
+    from .approval_limits import person_discount
+
+    return person_discount(user, business_unit)
+
+
+def _discount_cap(roles, business_unit, *, user=None, kind=None):
+    """The largest discount the person may give on their own: their own stock-sale discount if set, else their best role's."""
+    own = _own_stock_discount(user, business_unit, kind)
+    if own is not None:
+        return own
+    ceilings = _ceilings(business_unit)
+    return max((ceilings.get(role, Decimal("0.00")) for role in roles), default=Decimal("0.00"))
 
 
 def _positive_quantity(value, field="quantity"):
@@ -389,7 +428,7 @@ def _approve(quote, *, kind, approver, role, reason, details=None):
 
 @transaction.atomic
 def assign_approval_role(*, actor, user, business_unit, role):
-    _require_staff_demo(actor, business_unit)
+    _require_setup_admin(actor, business_unit)
     if role not in BusinessUnitRoleAssignment.Role.values:
         raise InvalidTransaction("Choose a supported approval role.")
     if not DemoUserMarker.objects.filter(user=user, is_synthetic=True).exists():
@@ -418,7 +457,7 @@ def assign_approval_role(*, actor, user, business_unit, role):
 
 @transaction.atomic
 def revoke_approval_role(*, actor, assignment):
-    _require_staff_demo(actor, assignment.business_unit)
+    _require_setup_admin(actor, assignment.business_unit)
     if assignment.revoked_at is None:
         assignment.revoked_at = timezone.now()
         assignment.save(update_fields=["revoked_at"])
@@ -427,7 +466,14 @@ def revoke_approval_role(*, actor, assignment):
 
 @transaction.atomic
 def configure_work_calendar(*, actor, business_unit, closed_weekdays, closed_dates):
-    _require_staff_demo(actor, business_unit)
+    # Work calendars: HR (Add and change staff records in the unit) or the Master Admin (Sam, 5 Nov 2026).
+    if getattr(settings, "APP_ENV", None) != "demo" or not DemoUserMarker.objects.filter(
+            user=actor, is_synthetic=True).exists():
+        raise WorkflowPermissionDenied("Workflow configuration is restricted to APP_ENV=demo.")
+    if not (actor.is_superuser or active_grants(actor, UserActionGrant.Action.MANAGE_STAFF).filter(
+            business_unit=business_unit).exists()):
+        raise WorkflowPermissionDenied("Only HR or the Master Admin can change the work calendar.")
+    _require_demo(business_unit, business_unit.legal_entity)
     if (
         not isinstance(closed_weekdays, list)
         or any(type(day) is not int or day < 0 or day > 6 for day in closed_weekdays)
@@ -461,7 +507,7 @@ def configure_work_calendar(*, actor, business_unit, closed_weekdays, closed_dat
 
 @transaction.atomic
 def configure_storage_exception_roles(*, actor, business_unit, roles):
-    _require_staff_demo(actor, business_unit)
+    _require_setup_admin(actor, business_unit)
     if not isinstance(roles, list) or any(role not in BusinessUnitRoleAssignment.Role.values for role in roles):
         raise InvalidTransaction("Storage exception approver roles must be supported business-unit roles.")
     config, _ = WorkflowPolicyConfig.objects.update_or_create(
@@ -517,7 +563,7 @@ def configure_selling_price(*, actor, business_unit, variant, amount):
 
 
 @transaction.atomic
-def create_synthetic_counterparty(*, actor, party_type, code, name):
+def create_synthetic_counterparty(*, actor, party_type, code, name, qid=None):
     _require_staff_demo(actor)
     if party_type not in SyntheticCounterparty.Type.values:
         raise InvalidTransaction("Choose supplier or customer.")
@@ -528,19 +574,33 @@ def create_synthetic_counterparty(*, actor, party_type, code, name):
         raise InvalidTransaction(f"Synthetic codes must begin with {expected_prefix}.")
     if not name.startswith("TEST ONLY"):
         raise InvalidTransaction("Synthetic counterparty names must begin with TEST ONLY.")
-    record = SyntheticCounterparty.objects.create(party_type=party_type, code=code, name=name)
+    declined = False
+    if party_type == SyntheticCounterparty.Type.CUSTOMER and isinstance(qid, str) and qid.strip():
+        from .customers import normalize_qid
+        qid = normalize_qid(qid)
+        if SyntheticCounterparty.objects.filter(qid=qid).exists():
+            raise InvalidTransaction("This QID is already registered to another customer.")
+    else:
+        # A customer may decline to give a QID; suppliers never have one.
+        declined = party_type == SyntheticCounterparty.Type.CUSTOMER
+        qid = None
+    record = SyntheticCounterparty.objects.create(
+        party_type=party_type, code=code, name=name, qid=qid, qid_declined=declined,
+    )
     return {
         "counterparty_id": record.pk,
         "party_type": record.party_type,
         "code": record.code,
         "name": record.name,
+        "client_number": record.client_number,
+        "qid": record.qid,
         "synthetic_only": True,
     }
 
 
 @transaction.atomic
 def create_special_order_value_band(*, actor, business_unit, minimum_value, maximum_value=None):
-    _require_staff_demo(actor, business_unit)
+    _require_setup_admin(actor, business_unit)
     minimum = _money(minimum_value, "minimum special-order value")
     maximum = _money(maximum_value, "maximum special-order value") if maximum_value is not None else None
     if maximum is not None and maximum <= minimum:
@@ -624,7 +684,7 @@ def create_sales_quote(
     discount = _percent(discount_percent, "discount_percent")
     if discount < 0 or discount > Decimal("50.00"):
         raise InvalidTransaction("Discounts cannot exceed the exceptional 50% ceiling.")
-    if not actor.is_staff and discount > _discount_cap(roles):
+    if not actor.is_staff and discount > _discount_cap(roles, business_unit, user=actor, kind=kind):
         raise WorkflowPermissionDenied("The requested discount exceeds this salesperson's existing authority.")
     from .quotation_presentation import clean_presentation, quotation_document
     display = clean_presentation(presentation)
@@ -737,7 +797,7 @@ def create_sales_quote(
     total_quote = total_list - total_discount
     status_value = (
         SalesQuote.Status.APPROVED
-        if discount <= _discount_cap(roles)
+        if discount <= _discount_cap(roles, business_unit, user=actor, kind=kind)
         else SalesQuote.Status.PENDING_APPROVAL
     )
     quote = SalesQuote.objects.create(
@@ -775,14 +835,15 @@ def create_sales_quote(
             net_total=row["net_total"],
         )
 
-    if discount <= _discount_cap(roles):
+    if discount <= _discount_cap(roles, business_unit, user=actor, kind=kind):
         _approve(
             quote,
             kind=QuoteApproval.Kind.DISCOUNT,
             approver=actor,
-            role=_price_approver_role(roles, discount),
+            role=_price_approver_role(roles, discount, business_unit, user=actor, kind=kind),
             reason=discount_reason,
-            details={"discount_percent": format(discount, "f"), "ceiling": format(_discount_cap(roles), "f")},
+            details={"discount_percent": format(discount, "f"),
+                     "ceiling": format(_discount_cap(roles, business_unit, user=actor, kind=kind), "f")},
         )
     if kind == SalesQuote.Kind.SPECIAL_ORDER:
         _approve(
@@ -815,12 +876,12 @@ def approve_quote_discount(*, actor, quote, idempotency_key, reason):
         return operation.result
     if quote.status != SalesQuote.Status.PENDING_APPROVAL:
         raise InvalidTransaction("Only quotes awaiting a price decision can be approved.")
-    ceiling = _discount_cap(roles)
+    ceiling = _discount_cap(roles, quote.business_unit, user=actor, kind=quote.kind)
     if quote.discount_percent > ceiling:
         raise WorkflowPermissionDenied(
-            f"This user's highest active role allows up to {format(ceiling, 'f')}% discount."
+            f"This user may approve up to {format(ceiling, 'f')}% discount."
         )
-    role = _price_approver_role(roles, quote.discount_percent)
+    role = _price_approver_role(roles, quote.discount_percent, quote.business_unit, user=actor, kind=quote.kind)
     _approve(
         quote,
         kind=QuoteApproval.Kind.DISCOUNT,
@@ -1543,6 +1604,12 @@ def record_simulated_payment(
     purpose="quote",
 ):
     _require_demo_actor(actor, quote.business_unit)
+    return take_quote_payment(actor=actor, quote=quote, idempotency_key=idempotency_key, amount=amount, method=method,
+                              purpose=purpose)
+
+
+def take_quote_payment(*, actor, quote, idempotency_key, amount, method, purpose="quote"):
+    """Record a payment on a quote and post it. Callers check who may do this first."""
     quote = SalesQuote.objects.select_for_update().get(pk=quote.pk)
     payment_amount = _money(amount, "simulated payment amount")
     if payment_amount <= 0:

@@ -594,7 +594,7 @@ class ReportingSensitiveFieldsTests(ReportingFixtureMixin, TestCase):
         self.grant_report_access(
             self.sales,
             ReportingPanel.PURCHASE_HISTORY,
-            [ReportDataCapability.PURCHASE_HISTORY],
+            [ReportDataCapability.PURCHASE_HISTORY, ReportDataCapability.EXPORT],
             unit=self.unit,
         )
         client = APIClient()
@@ -1402,7 +1402,7 @@ class ReportingExportAndBudgetTests(ReportingFixtureMixin, TestCase):
         self.grant_report_access(
             self.sales,
             ReportingPanel.SALES,
-            [ReportDataCapability.SALES],
+            [ReportDataCapability.SALES, ReportDataCapability.EXPORT],
             unit=self.unit,
         )
         client = APIClient(enforce_csrf_checks=True)
@@ -1560,7 +1560,7 @@ class ReportingExportAndBudgetTests(ReportingFixtureMixin, TestCase):
         self.grant_report_access(
             self.sales,
             ReportingPanel.SALES,
-            [ReportDataCapability.SALES],
+            [ReportDataCapability.SALES, ReportDataCapability.EXPORT],
             unit=self.unit,
         )
         client = APIClient(enforce_csrf_checks=True)

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { buildPaletteColors, customPaletteContrastIssues } from "./custom-palette-colors.mjs";
+import { areaThemeFor } from "./area-theme";
 import GovernanceWorkspace from "./GovernanceWorkspace";
 import FinanceStatusPage from "./FinanceStatusPage";
 import { GovernanceReportPanelManager, ReportsArea } from "./ReportingArea";
@@ -12,10 +13,54 @@ import WarehouseCapacityAuditRegister from "./WarehouseCapacityAuditRegister";
 import InventoryStockDetail from "./InventoryStockDetail";
 import InventoryRegisters from "./InventoryRegisters";
 import StockTransferRequests from "./StockTransferRequests";
+import StockCounts from "./StockCounts";
+import LowStock, { LowStockAlert } from "./LowStock";
+import AreaHome, { type MyArea, type MyAreas } from "./AreaHome";
+import StockValue from "./StockValue";
+import StockItems from "./StockItems";
+import CatalogueReader from "./CatalogueReader";
 import TransferPermissions from "./TransferPermissions";
+import UserAdmin from "./UserAdmin";
+import GoLiveImports from "./GoLiveImports";
+import ApprovalLimits from "./ApprovalLimits";
+import EmailAlerts from "./EmailAlerts";
 import SupplierKyc from "./SupplierKyc";
+import SupplierPayments from "./SupplierPayments";
+import GeneralLedger from "./GeneralLedger";
+import CustomerRefunds from "./CustomerRefunds";
+import Receivables from "./Receivables";
+import Payables from "./Payables";
+import SupplierBills from "./SupplierBills";
+import BankCash from "./BankCash";
+import BankReconciliation from "./BankReconciliation";
+import Expenses from "./Expenses";
+import Budgets from "./Budgets";
+import Factory from "./Factory";
+import Projects from "./Projects";
+import FixedAssets from "./FixedAssets";
+import ManualJournals from "./ManualJournals";
+import AdjustmentNotes from "./AdjustmentNotes";
+import SupplierAdvances from "./SupplierAdvances";
+import OldBalances from "./OldBalances";
+import CashForecast from "./CashForecast";
+import PaymentPlan from "./PaymentPlan";
+import CostSharing from "./CostSharing";
+import Cheques from "./Cheques";
+import StaffRecords from "./StaffRecords";
+import Leave from "./Leave";
+import Attendance from "./Attendance";
+import Overtime from "./Overtime";
+import PayRecords from "./PayRecords";
+import Payroll from "./Payroll";
+import Incentives from "./Incentives";
+import EndOfService from "./EndOfService";
+import StaffLoans from "./StaffLoans";
+import Letters from "./Letters";
+import Portal from "./Portal";
+import PortalAdmin from "./PortalAdmin";
+import Chat, { fetchUnread, UNREAD_POLL_MS, type UnreadSummary } from "./Chat";
 import SectionNavigation from "./SectionNavigation";
-import { coreSections as sections, sidebarSections } from "./sidebar-destinations";
+import { coreSections, factorySection, projectsSection, sidebarSections } from "./sidebar-destinations";
 import { normalizedWorkspaceHash, parseWorkspaceHash, routeIsAvailable, workspaceHash } from "./workspace-hash";
 import { useWorkspaceNavigationSafety } from "./useWorkspaceNavigationSafety";
 
@@ -83,7 +128,7 @@ function destinationName(destination: string, fallback?: string) {
       .find((item) => item.id === sectionId)?.children.find((item) => item.id === childId);
     return child?.label ?? fallback ?? destination;
   }
-  return fallback ?? sections.find((item) => item.id === destination)?.name ?? destination;
+  return fallback ?? [...coreSections, factorySection, projectsSection].find((item) => item.id === destination)?.name ?? destination;
 }
 
 function StarMark({ filled }: { filled: boolean }) {
@@ -148,7 +193,15 @@ export default function App() {
   const [isStaff, setIsStaff] = useState(false);
   const [isSuperuser, setIsSuperuser] = useState(false);
   const [canManageReportPanels, setCanManageReportPanels] = useState(false);
+  const [canManageUsers, setCanManageUsers] = useState(false);
+  const [canImport, setCanImport] = useState(false);
+  // The areas of the ERP this person works in (Sam, 5 Nov 2026). Null until known: every section shows.
+  const [myAreas, setMyAreas] = useState<MyAreas | null>(null);
+  const [canSeeFactory, setCanSeeFactory] = useState(false);
+  const [canSeeProjects, setCanSeeProjects] = useState(false);
+  const [hrPortalEnabled, setHrPortalEnabled] = useState(false);
   const [csrfToken, setCsrfToken] = useState("");
+  const [chatUnread, setChatUnread] = useState(0);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [paletteOptions, setPaletteOptions] = useState<Palette[]>([]);
   const [paletteUnits, setPaletteUnits] = useState<Unit[]>([]);
@@ -184,7 +237,25 @@ export default function App() {
   const [navigationChild, setNavigationChild] = useState<string | null>(initialRoute?.child ?? null);
   const [navigationRevision, setNavigationRevision] = useState(0);
   const [hashWasPresent, setHashWasPresent] = useState(Boolean(initialRoute));
-  const access = { isStaff, isSuperuser, canManageReportPanels };
+  // After sign-in the person first sees a plain page of area tiles (Sam, 6 Nov 2026). A tile opens the ERP
+  // with that area's sections; "*" is every section of the person's areas. A link straight to a page skips the tiles.
+  const [landing, setLanding] = useState(!initialRoute);
+  const [currentArea, setCurrentAreaState] = useState<string>(() => {
+    try { return window.sessionStorage.getItem("erp-area") ?? "*"; } catch { return "*"; }
+  });
+  const setCurrentArea = (key: string) => {
+    setCurrentAreaState(key);
+    try { window.sessionStorage.setItem("erp-area", key); } catch { /* the choice just is not remembered */ }
+  };
+  const chosenArea = myAreas?.areas.find((area) => area.key === currentArea);
+  // Sections every person keeps (home, messages, My Page, the HR portal, reports from a reporting role).
+  const alwaysSections = myAreas
+    ? myAreas.sections.filter((id) => !myAreas.areas.some((area) => area.sections.includes(id)))
+    : [];
+  const visibleSections = !myAreas ? undefined
+    : chosenArea ? [...alwaysSections, ...chosenArea.sections] : myAreas.sections;
+  const access = { isStaff, isSuperuser, canManageReportPanels, canManageUsers, canImport, canSeeFactory, canSeeProjects, hrPortalEnabled, visibleSections };
+  const sections = [...coreSections, ...(canSeeFactory ? [factorySection] : []), ...(canSeeProjects ? [projectsSection] : [])];
   const routeAvailable = !hashWasPresent || (
     Boolean(navigationChild) && routeIsAvailable({ section, child: navigationChild ?? "" }, access)
   );
@@ -205,7 +276,7 @@ export default function App() {
     lastWorkspaceLocation.current = window.location.pathname + window.location.search + hash;
   }, [canLeaveSection]);
   const setSection = useCallback((next: string) => {
-    if (sidebarSections({ isStaff, isSuperuser, canManageReportPanels }).some((item) => item.id === next)) {
+    if (sidebarSections(access).some((item) => item.id === next)) {
       navigateTo(next, "main");
     } else {
       if (!canLeaveSection(next)) return;
@@ -216,8 +287,21 @@ export default function App() {
       setHashWasPresent(false);
       setNavigationRevision((revision) => revision + 1);
     }
-  }, [isStaff, isSuperuser, canManageReportPanels, navigateTo, canLeaveSection]);
-  const navigationSections = sidebarSections({ isStaff, isSuperuser, canManageReportPanels });
+  }, [isStaff, isSuperuser, canManageReportPanels, canManageUsers, canImport, canSeeFactory, canSeeProjects, hrPortalEnabled, visibleSections, navigateTo, canLeaveSection]);
+  const navigationSections = sidebarSections(access);
+  const onChatUnread = useCallback((summary: UnreadSummary) => setChatUnread(summary.total), []);
+  useEffect(() => {
+    // The Messages page keeps the count itself while it is open.
+    if (!username || section === "chat") return;
+    let current = true;
+    const check = () => {
+      if (document.visibilityState === "hidden") return;
+      fetchUnread().then((summary) => { if (current) setChatUnread(summary.total); }).catch(() => undefined);
+    };
+    check();
+    const timer = window.setInterval(check, UNREAD_POLL_MS);
+    return () => { current = false; window.clearInterval(timer); };
+  }, [username, section]);
   useEffect(() => {
     if (!routeAvailable || !organization) return;
     const selector = section === "purchasing" && navigationChild
@@ -237,6 +321,16 @@ export default function App() {
     if (navigationChild === "capacity") setCapacityOpened(true);
     if (navigationChild === "transfers") setTransfersOpened(true);
   }, [section, navigationChild]);
+  const singleAreaOpened = useRef(false);
+  useEffect(() => {
+    // Someone with one area goes straight into it from the landing page, once per sign-in.
+    if (!myAreas || !organization || singleAreaOpened.current) return;
+    singleAreaOpened.current = true;
+    const usable = myAreas.areas.map(openable).filter((area) => !area.coming_soon);
+    if (usable.length === 1 && myAreas.areas.length === 1 && section === "dashboard" && !hashWasPresent) openArea(usable[0]);
+    else if (!usable.length) setLanding(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myAreas, organization]);
   useEffect(() => {
     const canonicalHash = normalizedWorkspaceHash(window.location.hash);
     if (canonicalHash !== window.location.hash) window.history.replaceState(null, "", canonicalHash);
@@ -251,6 +345,7 @@ export default function App() {
       const canonicalHash = normalizedWorkspaceHash(window.location.hash);
       if (canonicalHash !== window.location.hash) window.history.replaceState(null, "", canonicalHash);
       setHashWasPresent(Boolean(route));
+      if (route) setLanding(false);
       setSectionState(route?.section ?? "dashboard");
       setNavigationChild(route?.child ?? null);
       setNavigationRevision((revision) => revision + 1);
@@ -265,6 +360,10 @@ export default function App() {
   }, [canLeaveSection]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  // Staff with only a portal sign-in have no business unit, so the Overview cannot open for them: start on the HR Portal.
+  useEffect(() => {
+    if (!loading && username && !organization && hrPortalEnabled && section === "dashboard") navigateTo("portal", "main");
+  }, [loading, username, organization, hrPortalEnabled, section, navigateTo]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const favoritesRequestId = useRef(0);
@@ -279,7 +378,11 @@ export default function App() {
     const theme = organization?.selected_unit.theme_palette || (username ? "slate" : "tivoli");
     document.documentElement.dataset.unitTheme = theme;
     const root = document.documentElement;
-    if (theme === "custom" && organization?.selected_unit.custom_palette?.colors) {
+    // Factory, warehouse and logistics, and HR pages wear their own area colours.
+    const areaTheme = username && routeAvailable ? areaThemeFor(section) : null;
+    if (areaTheme) root.dataset.areaTheme = areaTheme;
+    else delete root.dataset.areaTheme;
+    if (!areaTheme && theme === "custom" && organization?.selected_unit.custom_palette?.colors) {
       Object.entries(organization.selected_unit.custom_palette.colors).forEach(([property, value]) => {
         root.style.setProperty(property, value);
       });
@@ -288,9 +391,10 @@ export default function App() {
     }
     return () => {
       delete root.dataset.unitTheme;
+      delete root.dataset.areaTheme;
       customThemeProperties.forEach((property) => root.style.removeProperty(property));
     };
-  }, [organization?.selected_unit.theme_palette, organization?.selected_unit.custom_palette, username]);
+  }, [organization?.selected_unit.theme_palette, organization?.selected_unit.custom_palette, username, section, routeAvailable]);
 
   const refreshCsrf = useCallback(async () => {
     const data = await api<{ csrfToken: string }>("/api/auth/csrf/");
@@ -407,6 +511,12 @@ export default function App() {
           is_staff?: boolean;
           is_superuser?: boolean;
           can_manage_report_panels?: boolean;
+          can_manage_users?: boolean;
+          can_import?: boolean;
+          areas?: MyAreas;
+          can_see_factory?: boolean;
+          can_see_projects?: boolean;
+          hr_portal_enabled?: boolean;
         }>("/api/auth/me/");
         if (!alive) return;
         if (current.authenticated && current.username) {
@@ -414,6 +524,12 @@ export default function App() {
           setIsStaff(Boolean(current.is_staff));
           setIsSuperuser(Boolean(current.is_superuser));
           setCanManageReportPanels(Boolean(current.can_manage_report_panels));
+          setCanManageUsers(current.can_manage_users ?? Boolean(current.is_superuser));
+          setCanImport(current.can_import ?? Boolean(current.is_superuser));
+          setMyAreas(current.areas ?? null);
+          setCanSeeFactory(Boolean(current.can_see_factory));
+          setCanSeeProjects(Boolean(current.can_see_projects));
+          setHrPortalEnabled(Boolean(current.hr_portal_enabled));
           try {
             const currentOrganization = await loadOrganization();
             await loadFavorites(currentOrganization.selected_unit.id);
@@ -456,6 +572,12 @@ export default function App() {
         is_staff: boolean;
         is_superuser: boolean;
         can_manage_report_panels: boolean;
+        can_manage_users?: boolean;
+        can_import?: boolean;
+        areas?: MyAreas;
+        can_see_factory?: boolean;
+        can_see_projects?: boolean;
+        hr_portal_enabled?: boolean;
       }>("/api/auth/login/", {
         method: "POST",
         headers: { "X-CSRFToken": token },
@@ -469,8 +591,21 @@ export default function App() {
       setIsStaff(result.is_staff);
       setIsSuperuser(result.is_superuser);
       setCanManageReportPanels(result.can_manage_report_panels);
-      const currentOrganization = await loadOrganization();
-      await loadFavorites(currentOrganization.selected_unit.id);
+      setCanManageUsers(result.can_manage_users ?? result.is_superuser);
+      setCanImport(result.can_import ?? result.is_superuser);
+      setMyAreas(result.areas ?? null);
+      setCanSeeFactory(Boolean(result.can_see_factory));
+      setCanSeeProjects(Boolean(result.can_see_projects));
+      setHrPortalEnabled(Boolean(result.hr_portal_enabled));
+      try {
+        const currentOrganization = await loadOrganization();
+        await loadFavorites(currentOrganization.selected_unit.id);
+      } catch (reason) {
+        // Staff with only a portal sign-in have no business unit; they go straight to the HR Portal.
+        if (!result.hr_portal_enabled) throw reason;
+        setOrganization(null);
+        navigateTo("portal", "main");
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Sign in failed.");
     } finally {
@@ -490,6 +625,15 @@ export default function App() {
       setIsStaff(false);
       setIsSuperuser(false);
       setCanManageReportPanels(false);
+      setCanManageUsers(false);
+      setCanImport(false);
+      setMyAreas(null);
+      singleAreaOpened.current = false;
+      setLanding(true);
+      setCurrentArea("*");
+      setCanSeeFactory(false);
+      setCanSeeProjects(false);
+      setHrPortalEnabled(false);
       setOrganization(null);
       setPaletteOptions([]);
       setPaletteUnits([]);
@@ -548,6 +692,34 @@ export default function App() {
 
   function selectUnit(event: FormEvent<HTMLSelectElement>) {
     refreshUnitContext(Number(event.currentTarget.value));
+  }
+
+  // An area whose section is not in this version yet (for example Factory before it ships) shows as coming soon.
+  function openable(area: MyArea): MyArea {
+    const mine = sidebarSections({ ...access, visibleSections: myAreas?.sections });
+    const sections = area.sections.filter((id) => mine.some((item) => item.id === id));
+    return { ...area, sections, coming_soon: area.coming_soon || !sections.length };
+  }
+
+  // A tile on the landing page: switch to the area's showroom when it has one, then open its first section.
+  function openArea(chosen: MyArea) {
+    const area = openable(chosen);
+    if (area.coming_soon) return;
+    const unitId = area.unit?.id;
+    if (unitId && organization && organization.selected_unit.id !== unitId
+      && organization.units.some((unit) => unit.id === unitId)) {
+      refreshUnitContext(unitId);
+    }
+    setCurrentArea(area.key);
+    setLanding(false);
+    navigateTo(area.sections[0], "main");
+  }
+
+  // "Open the full ERP" on the tiles page: every section of the person's areas, starting at the overview.
+  function openFullErp() {
+    setCurrentArea("*");
+    setLanding(false);
+    setSection("dashboard");
   }
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
@@ -742,13 +914,16 @@ export default function App() {
     );
   }
 
-  const selectedSection = sections.find((item) => item.id === section);
+  const selectedSection = navigationSections.find((item) => item.id === section) ?? sections.find((item) => item.id === section);
   const activeWorkspaceChild = navigationChild ?? "main";
   const activeChildLabel = navigationSections.find((item) => item.id === section)
     ?.children.find((item) => item.id === activeWorkspaceChild)?.label;
-  const title = section === "dashboard" ? "Overview" : section === "my-page" ? "My Page"
+  const title = section === "dashboard" ? "Overview" : section === "my-page" ? "My Page" : section === "chat" ? "Messages"
     : activeChildLabel ?? selectedSection?.name ?? "Overview";
-  const availableIds = new Set(availableDestinations.map((item) => item.destination));
+  // Favorites follow the person's areas too: a pin in a hidden section is not shown.
+  const inMyAreas = (destination: string) => !visibleSections || visibleSections.includes(destination.split(".")[0]);
+  const shownFavorites = favorites.filter((item) => inMyAreas(item.destination));
+  const availableIds = new Set(availableDestinations.filter((item) => inMyAreas(item.destination)).map((item) => item.destination));
   const favoriteIds = new Set(favorites.map((item) => item.destination));
   const favoriteControl = (destination: string, label?: string) => availableIds.has(destination) ? (
     <button
@@ -781,12 +956,41 @@ export default function App() {
           : section === item.destination && (!navigationChild || navigationChild === "main") ? "page" : undefined}
         title={item.label}
       >
-        <span className="nav-icon nav-number">{item.destination === "dashboard" ? "⌂" : sections.find((entry) => entry.id === item.destination.split(".")[0])?.icon ?? "•"}</span>
+        <span className="nav-icon nav-number" data-section={item.destination.split(".")[0]}>{item.destination === "dashboard" ? "⌂" : sections.find((entry) => entry.id === item.destination.split(".")[0])?.icon ?? "•"}</span>
         <span>{item.label}</span>
       </button>
       {favoriteControl(item.destination)}
     </div>
   );
+
+  if (landing && myAreas) {
+    const tiles = myAreas.areas.map(openable);
+    const openableCount = tiles.filter((area) => !area.coming_soon).length;
+    return (
+      <main className="area-landing">
+        <header className="area-landing-bar">
+          <div className="sidebar-brand">
+            <div className="brand-monogram">T</div>
+            <div><strong>TIVOLI</strong><span>ERP FOUNDATION</span></div>
+          </div>
+          <div className="topbar-actions">
+            <div className="user-menu"><span className="avatar">{username.slice(0, 1).toUpperCase()}</span><span className="user-name">{username}</span></div>
+            <button className="button button-quiet signout" onClick={handleLogout} disabled={busy}>Sign out</button>
+          </div>
+        </header>
+        <div className="area-landing-body">
+          <h1>Welcome, {username}</h1>
+          {error && <div className="alert" role="alert">{error}</div>}
+          <AreaHome areas={{ ...myAreas, areas: tiles }} onOpen={openArea} />
+          {openableCount > 1 && (
+            <button type="button" className="button button-outline area-landing-full" onClick={openFullErp}>
+              Open the full ERP with all my sections
+            </button>
+          )}
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div className="app-layout">
@@ -795,16 +999,31 @@ export default function App() {
           <div className="brand-monogram">T</div>
           <div><strong>TIVOLI</strong><span>ERP FOUNDATION</span></div>
         </div>
+        {myAreas && (myAreas.areas.length > 1 || chosenArea === undefined) && (
+          <div className="area-switch">
+            <button type="button" className="button button-quiet" onClick={() => { if (canLeaveSection("dashboard")) setLanding(true); }}>
+              <span aria-hidden="true">←</span> All areas
+            </button>
+            <span className="area-switch-name">{chosenArea ? chosenArea.name : "All my sections"}</span>
+          </div>
+        )}
         <div className="workspace-label">WORKSPACE</div>
         <nav aria-label="Main navigation">
           <div className="nav-row">
             <button className={`nav-item ${section === "dashboard" ? "active" : ""}`} onClick={() => setSection("dashboard")} aria-current={section === "dashboard" ? "page" : undefined}>
-              <span className="nav-icon">⌂</span><span>Overview</span>
+              <span className="nav-icon nav-number" data-section="dashboard">⌂</span><span>Overview</span>
             </button>
             {favoriteControl("dashboard")}
           </div>
+          <div className="nav-row">
+            <button className={`nav-item nav-chat ${section === "chat" ? "active" : ""}`} onClick={() => setSection("chat")} aria-current={section === "chat" ? "page" : undefined}
+              aria-label={chatUnread ? `Messages, ${chatUnread} unread` : "Messages"}>
+              <span className="nav-icon nav-number" data-section="chat">✉</span><span>Messages</span>
+              {chatUnread > 0 && <span className="nav-chat-badge" aria-hidden="true">{chatUnread > 99 ? "99+" : chatUnread}</span>}
+            </button>
+          </div>
           <div className="nav-divider" />
-          <div className="nav-group-label">CORE SECTIONS</div>
+          <div className="nav-group-label">{chosenArea ? `${chosenArea.name.toUpperCase()} SECTIONS` : myAreas && myAreas.source !== "all" ? "YOUR SECTIONS" : "CORE SECTIONS"}</div>
           <SectionNavigation
             sections={navigationSections}
             activeSection={section}
@@ -818,7 +1037,7 @@ export default function App() {
           <button className={`nav-item my-page-link ${section === "my-page" ? "active" : ""}`} onClick={() => setSection("my-page")} aria-current={section === "my-page" ? "page" : undefined}>
             <span className="nav-icon">M</span><span>My Page</span>
           </button>
-          {favorites.length ? favorites.map(favoriteButton) : (
+          {shownFavorites.length ? shownFavorites.map(favoriteButton) : (
             <p className="favorites-empty">{favoritesError ? "Favorites are unavailable right now." : "Pin a destination to keep it here."}</p>
           )}
         </nav>
@@ -869,7 +1088,7 @@ export default function App() {
           {stockError && <div className="alert inline-alert" role="alert">{stockError}</div>}
           {favoritesError && <div className="alert inline-alert favorites-alert" role="alert">{favoritesError}</div>}
           {unitSwitching && <p className="muted" role="status">Updating business-unit context…</p>}
-          {!organization && routeAvailable && section !== "procurement" && section !== "governance" && (
+          {!organization && routeAvailable && section !== "procurement" && section !== "governance" && section !== "chat" && section !== "portal" && (
             <section className="content-card">
               <h2>Business-unit context unavailable</h2>
               <p>The current business-unit context could not be verified. Scoped data is not displayed until it is reloaded.</p>
@@ -877,9 +1096,18 @@ export default function App() {
             </section>
           )}
 
+          {section === "portal" && hrPortalEnabled && routeAvailable && <div data-workspace-view={`portal/${activeWorkspaceChild}`}>
+            {/* The portal is the employee's own view: no business unit, so each screen shows only the person's own records. */}
+            {activeWorkspaceChild === "letters" ? <Letters selectedUnitId={null} csrfToken={csrfToken} mode="employee" />
+              : activeWorkspaceChild === "leave" ? <Leave selectedUnitId={null} csrfToken={csrfToken} />
+              : activeWorkspaceChild === "attendance" ? <Attendance selectedUnitId={null} csrfToken={csrfToken} />
+              : activeWorkspaceChild === "overtime" ? <Overtime selectedUnitId={null} csrfToken={csrfToken} />
+              : <Portal key={activeWorkspaceChild} view={activeWorkspaceChild} csrfToken={csrfToken} onOpen={(child) => navigateTo("portal", child)} />}
+          </div>}
           {organization && section !== "governance" && <>
           {section === "dashboard" && (
             <>
+              <LowStockAlert key={organization.selected_unit.id} selectedUnitId={organization.selected_unit.id} onOpen={() => navigateTo("inventory", "low-stock")} />
               <section className="welcome-panel">
                 <div className="welcome-copy">
                   <span className="welcome-kicker">FOUNDATION · MILESTONE 1</span>
@@ -889,11 +1117,11 @@ export default function App() {
                 <div className="welcome-stamp"><span>TV</span><small>ONE COMPANY<br />THREE BUSINESS UNITS</small></div>
               </section>
               <div className="section-title-row">
-                <div><h2>Core sections</h2><p>Nine work areas, shown with their current implementation status.</p></div>
-                <span className="small-label">01 / 09 FOUNDATION</span>
+                <div><h2>{myAreas ? "Your sections" : "Core sections"}</h2><p>{myAreas ? "The sections of your areas, shown with their current implementation status." : "Nine work areas, shown with their current implementation status."}</p></div>
+                <span className="small-label">{myAreas ? `${String(navigationSections.length).padStart(2, "0")} SECTIONS` : "01 / 09 FOUNDATION"}</span>
               </div>
               <div className="module-grid">
-                {sections.map((item, index) => (
+                {sections.filter((item) => !visibleSections || visibleSections.includes(item.id)).map((item, index) => (
                   <button
                     key={item.id}
                     className="module-card"
@@ -934,6 +1162,8 @@ export default function App() {
               isStaff={isStaff}
               isSuperuser={isSuperuser}
               canManageReportPanels={canManageReportPanels}
+              canManageUsers={canManageUsers}
+              canImport={canImport}
               onManageReportPanels={() => navigateTo("governance", "report-panels")}
               presentation={isStaff && navigationChild === "presentation" ? (
                 <section className="content-card palette-admin">
@@ -1011,7 +1241,11 @@ export default function App() {
               purchasingReview={isStaff && navigationChild === "purchasing-config" ? <PurchasingGovernanceReview selectedUnitId={organization?.selected_unit.id ?? null} selectedUnitName={organization?.selected_unit.name ?? ""} isStaff={isStaff} /> : undefined}
               capacityAdministration={isSuperuser && navigationChild === "capacity-admin" ? <WarehouseCapacity isSuperuser={isSuperuser} csrfToken={csrfToken} administrationOnly /> : undefined}
               capacityAudit={isSuperuser && navigationChild === "capacity-audit" ? <WarehouseCapacityAuditRegister isSuperuser={isSuperuser} /> : undefined}
-              transferPermissions={isSuperuser && navigationChild === "transfer-permissions" ? <TransferPermissions key={organization?.selected_unit.id ?? 0} selectedUnitId={organization?.selected_unit.id ?? null} csrfToken={csrfToken} /> : undefined}
+              transferPermissions={canManageUsers && navigationChild === "transfer-permissions" ? <TransferPermissions key={organization?.selected_unit.id ?? 0} selectedUnitId={organization?.selected_unit.id ?? null} csrfToken={csrfToken} /> : undefined}
+              userAdmin={canManageUsers && navigationChild === "users" ? <UserAdmin csrfToken={csrfToken} /> : undefined}
+              imports={canImport && navigationChild === "imports" ? <GoLiveImports csrfToken={csrfToken} /> : undefined}
+              approvalLimits={canManageUsers && navigationChild === "approval-limits" ? <ApprovalLimits key={organization?.selected_unit.id ?? 0} selectedUnitId={organization?.selected_unit.id ?? null} csrfToken={csrfToken} /> : undefined}
+              emailAlerts={canManageUsers && navigationChild === "alerts" ? <EmailAlerts csrfToken={csrfToken} /> : undefined}
             />
           )}
 
@@ -1166,6 +1400,21 @@ export default function App() {
             {transfersOpened && organization && <div hidden={activeWorkspaceChild !== "transfers"} data-workspace-function="inventory/transfers">
               <StockTransferRequests key={organization.selected_unit.id} selectedUnitId={organization.selected_unit.id} csrfToken={csrfToken} />
             </div>}
+            {organization && activeWorkspaceChild === "counts" && <div data-workspace-function="inventory/counts">
+              <StockCounts key={organization.selected_unit.id} selectedUnitId={organization.selected_unit.id} csrfToken={csrfToken} />
+            </div>}
+            {organization && activeWorkspaceChild === "low-stock" && <div data-workspace-function="inventory/low-stock">
+              <LowStock key={organization.selected_unit.id} selectedUnitId={organization.selected_unit.id} csrfToken={csrfToken} />
+            </div>}
+            {organization && activeWorkspaceChild === "stock-value" && <div data-workspace-function="inventory/stock-value">
+              <StockValue key={organization.selected_unit.id} selectedUnitId={organization.selected_unit.id} />
+            </div>}
+            {organization && activeWorkspaceChild === "items" && <div data-workspace-function="inventory/items">
+              <StockItems key={organization.selected_unit.id} selectedUnitId={organization.selected_unit.id} csrfToken={csrfToken} />
+            </div>}
+            {organization && activeWorkspaceChild === "catalogue" && <div data-workspace-function="inventory/catalogue">
+              <CatalogueReader key={organization.selected_unit.id} selectedUnitId={organization.selected_unit.id} csrfToken={csrfToken} />
+            </div>}
             </div>
           )}
 
@@ -1231,6 +1480,8 @@ export default function App() {
             />
           )}
 
+          {section === "chat" && <Chat csrfToken={csrfToken} username={username} onUnreadChange={onChatUnread} />}
+
           {section === "my-page" && (
             <section className="my-page-view">
               <div className="my-page-intro">
@@ -1238,9 +1489,9 @@ export default function App() {
                 <h2>Everything you’ve pinned, in one place.</h2>
                 <p>Favorites reflect destinations available to you in {organization?.selected_unit.name}.</p>
               </div>
-              {favorites.length ? (
+              {shownFavorites.length ? (
                 <div className="my-favorites-list">
-                  {favorites.map((item, index) => (
+                  {shownFavorites.map((item, index) => (
                     <div className="my-favorite-row" key={item.destination}>
                       <span className="my-favorite-index">{String(index + 1).padStart(2, "0")}</span>
                         <button className="my-favorite-open" onClick={() => openDestination(item.destination)}>
@@ -1285,8 +1536,40 @@ export default function App() {
             </section>
           )}
 
-          {section === "finance" && <FinanceStatusPage canManageReportPanels={canManageReportPanels} onNavigate={navigateTo} />}
-          {section !== "dashboard" && section !== "finance" && section !== "inventory" && section !== "purchasing" && section !== "procurement" && section !== "retail" && section !== "delivery" && section !== "my-page" && section !== "reports" && section !== "governance" && selectedSection && (
+          {section === "finance" && activeWorkspaceChild === "supplier-payments" && <div data-workspace-view="finance/supplier-payments"><SupplierPayments key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "ledger" && <div data-workspace-view="finance/ledger"><GeneralLedger key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "refunds" && <div data-workspace-view="finance/refunds"><CustomerRefunds key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "receivables" && <div data-workspace-view="finance/receivables"><Receivables key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} /></div>}
+          {section === "finance" && activeWorkspaceChild === "payables" && <div data-workspace-view="finance/payables"><Payables key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} /></div>}
+          {section === "finance" && activeWorkspaceChild === "supplier-bills" && <div data-workspace-view="finance/supplier-bills"><SupplierBills key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "cash" && <div data-workspace-view="finance/cash"><BankCash key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "bank-rec" && <div data-workspace-view="finance/bank-rec"><BankReconciliation key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "budgets" && <div data-workspace-view="finance/budgets"><Budgets key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "assets" && <div data-workspace-view="finance/assets"><FixedAssets key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "journals" && <div data-workspace-view="finance/journals"><ManualJournals key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "notes" && <div data-workspace-view="finance/notes"><AdjustmentNotes key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "advances" && <div data-workspace-view="finance/advances"><SupplierAdvances key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "old-balances" && <div data-workspace-view="finance/old-balances"><OldBalances key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "forecast" && <div data-workspace-view="finance/forecast"><CashForecast key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "payment-plan" && <div data-workspace-view="finance/payment-plan"><PaymentPlan key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "sharing" && <div data-workspace-view="finance/sharing"><CostSharing key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "cheques" && <div data-workspace-view="finance/cheques"><Cheques key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "hr" && activeWorkspaceChild === "leave" && <div data-workspace-view="hr/leave"><Leave key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "hr" && activeWorkspaceChild === "attendance" && <div data-workspace-view="hr/attendance"><Attendance key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "hr" && activeWorkspaceChild === "overtime" && <div data-workspace-view="hr/overtime"><Overtime key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "hr" && activeWorkspaceChild === "pay" && <div data-workspace-view="hr/pay"><PayRecords key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "hr" && activeWorkspaceChild === "payroll" && <div data-workspace-view="hr/payroll"><Payroll key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "hr" && activeWorkspaceChild === "incentives" && <div data-workspace-view="hr/incentives"><Incentives key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "hr" && activeWorkspaceChild === "end-of-service" && <div data-workspace-view="hr/end-of-service"><EndOfService key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "hr" && activeWorkspaceChild === "loans" && <div data-workspace-view="hr/loans"><StaffLoans key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "hr" && hrPortalEnabled && (activeWorkspaceChild === "portal-posts" || activeWorkspaceChild === "portal-suggestions") && <div data-workspace-view={`hr/${activeWorkspaceChild}`}><PortalAdmin view={activeWorkspaceChild === "portal-posts" ? "posts" : "suggestions"} csrfToken={csrfToken} /></div>}
+          {section === "hr" && activeWorkspaceChild === "letters" && <div data-workspace-view="hr/letters"><Letters key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "hr" && activeWorkspaceChild !== "leave" && activeWorkspaceChild !== "attendance" && activeWorkspaceChild !== "overtime" && activeWorkspaceChild !== "pay" && activeWorkspaceChild !== "payroll" && activeWorkspaceChild !== "incentives" && activeWorkspaceChild !== "end-of-service" && activeWorkspaceChild !== "loans" && activeWorkspaceChild !== "letters" && activeWorkspaceChild !== "portal-posts" && activeWorkspaceChild !== "portal-suggestions" && <div data-workspace-view={`hr/${activeWorkspaceChild}`}><StaffRecords key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild === "expenses" && <div data-workspace-view="finance/expenses"><Expenses key={selectedUnitId ?? 0} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} /></div>}
+          {section === "finance" && activeWorkspaceChild !== "supplier-payments" && activeWorkspaceChild !== "ledger" && activeWorkspaceChild !== "refunds" && activeWorkspaceChild !== "receivables" && activeWorkspaceChild !== "payables" && activeWorkspaceChild !== "supplier-bills" && activeWorkspaceChild !== "cash" && activeWorkspaceChild !== "bank-rec" && activeWorkspaceChild !== "expenses" && activeWorkspaceChild !== "budgets" && activeWorkspaceChild !== "assets" && activeWorkspaceChild !== "journals" && activeWorkspaceChild !== "notes" && activeWorkspaceChild !== "advances" && activeWorkspaceChild !== "old-balances" && activeWorkspaceChild !== "forecast" && activeWorkspaceChild !== "payment-plan" && activeWorkspaceChild !== "sharing" && activeWorkspaceChild !== "cheques" && <FinanceStatusPage canManageReportPanels={canManageReportPanels} onNavigate={navigateTo} />}
+          {section === "factory" && canSeeFactory && routeAvailable && <div data-workspace-view={`factory/${activeWorkspaceChild}`}><Factory key={`${selectedUnitId ?? 0}-${activeWorkspaceChild}`} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} view={(["planning", "dashboard", "team", "machines", "learning", "materials", "setup"] as const).find((child) => child === activeWorkspaceChild) ?? "main"} /></div>}
+          {section === "projects" && canSeeProjects && routeAvailable && <div data-workspace-view={`projects/${activeWorkspaceChild}`}><Projects key={`${selectedUnitId ?? 0}-${activeWorkspaceChild}`} selectedUnitId={selectedUnitId ?? null} csrfToken={csrfToken} view={(["tenders", "bonds", "cash", "setup"] as const).find((child) => child === activeWorkspaceChild) ?? "main"} /></div>}
+          {section !== "dashboard" && section !== "factory" && section !== "projects" && section !== "finance" && section !== "hr" && section !== "inventory" && section !== "purchasing" && section !== "procurement" && section !== "retail" && section !== "delivery" && section !== "my-page" && section !== "reports" && section !== "governance" && section !== "portal" && selectedSection && (
             <section className="planned-panel" data-workspace-view={`${section}/${activeWorkspaceChild}`}>
               <div className="planned-icon">{selectedSection.icon}</div>
               <div className="eyebrow">PLANNED · NOT IMPLEMENTED</div>

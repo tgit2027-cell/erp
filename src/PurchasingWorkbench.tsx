@@ -8,6 +8,8 @@ import {
 import PurchasingReadside from "./PurchasingReadside";
 import RetailCollections from "./RetailCollections";
 import RetailInvoices from "./RetailInvoices";
+import Customers from "./Customers";
+import Incentives from "./Incentives";
 import DeliveryPreparation from "./DeliveryPreparation";
 import PurchasingTransactions from "./PurchasingTransactions";
 import SalesReturnIntake from "./SalesReturnIntake";
@@ -877,10 +879,14 @@ export default function PurchasingWorkbench({
           <div className="pw-kicker">{deliveryMode ? "DELIVERY & AFTER-SALES · REVIEW WORKSPACE" : retailMode ? "RETAIL & SALES · REVIEW WORKSPACE" : procurementMode ? "PROCUREMENT & IMPORTS · RECEIVING WORKSPACE" : warehouseMode ? "INVENTORY · RECEIVING WORKSPACE" : "PURCHASING · REVIEW WORKSPACE"}</div>
           <h1 id="purchasing-workbench-title">{focus === "preparation" ? "Picking preparation" : focus && focus !== "main"
             ? overviewFunctions.find((child) => child.id === focus)?.label
-              ?? ({ quote: deliveryMode ? "Authorized quote lookup" : "Quote lookup", actions: "Quote collection & holds", register: "Authorized quote register", collections: "Collection follow-up", invoices: "Customer invoices", transactions: "Transaction workbench", registers: "Purchasing records", commitments: "Purchase commitments", progress: "Commitment receipt progress", receipt: "Imported-goods receipt", packing: "Packing-list review", suppliers: "Staff counterparty directory", handover: "Readiness & handover", returns: "Sales-return intake", quotes: "Quote register", storage: "Storage-charge register", reservations: "Reservation register", deliveries: "Delivery register" } as Record<string, string>)[focus] ?? focus
+              ?? ({ quote: deliveryMode ? "Authorized quote lookup" : "Quote lookup", actions: "Quote collection & holds", register: "Authorized quote register", collections: "Collection follow-up", invoices: "Customer invoices", commission: "My commission", transactions: "Transaction workbench", registers: "Purchasing records", commitments: "Purchase commitments", progress: "Commitment receipt progress", receipt: "Imported-goods receipt", packing: "Packing-list review", suppliers: "Staff counterparty directory", handover: "Readiness & handover", returns: "Sales-return intake", quotes: "Quote register", storage: "Storage-charge register", reservations: "Reservation register", deliveries: "Delivery register" } as Record<string, string>)[focus] ?? focus
             : deliveryMode ? "Delivery & after-sales" : retailMode ? "Retail & Sales" : procurementMode ? "Procurement & Imports" : warehouseMode ? "Inventory receiving" : "Purchasing workbench"}</h1>
           <p>{deliveryMode
             ? "Follow authorized quotes from readiness to handover within the selected business unit. Existing access checks remain authoritative."
+            : retailMode && focus === "commission"
+              ? "Your commission plan, how it was worked out and when payroll pays it."
+            : retailMode && focus === "customers"
+              ? "Each customer has a permanent client number (retail), project number (projects & fitout) or both, so their quotes and invoices stay linked even when their phone number changes. The Qatar ID (QID) is recorded when the customer agrees to give it."
             : retailMode
               ? "Create synthetic stock or special-order quotes from approved snapshots, then follow only the actions this account is authorized to take."
               : procurementMode
@@ -937,6 +943,10 @@ export default function PurchasingWorkbench({
         username={username}
         refreshCounter={readsideRefresh}
       />}
+
+      {retailMode && focus === "customers" && <Customers csrfToken={csrfToken} />}
+
+      {retailMode && focus === "commission" && <Incentives key={selectedUnitId} selectedUnitId={selectedUnitId} csrfToken={csrfToken} />}
 
       {retailMode && focus === "collections" && <RetailCollections
         selectedUnitId={selectedUnitId}
@@ -1048,7 +1058,6 @@ export default function PurchasingWorkbench({
           selectedUnitId={selectedUnitId}
           selectedUnitName={selectedUnitName}
           isStaff={isStaff}
-          csrfToken={csrfToken}
           mode={mode}
           onOpenReports={onOpenReports}
           enabled={focus === undefined || ["register", "registers", "suppliers", "quotes", "storage", "reservations", "deliveries"].includes(focus)}

@@ -20,7 +20,7 @@ DETAILED = {
     "foundation.BusinessUnit", "foundation.Location", "foundation.Item", "foundation.Variant",
     "foundation.ApprovedSellingPrice", "foundation.SyntheticCounterparty", "foundation.LedgerAccount",
     "foundation.Currency", "foundation.UserActionGrant", "foundation.BusinessUnitRoleAssignment",
-    "foundation.LocationCapacityGrant", "foundation.ReportingRoleMembership", "foundation.ReportPanelGrant",
+    "foundation.LocationCapacityGrant", "foundation.UserArea", "foundation.ReportingRoleMembership", "foundation.ReportPanelGrant",
     "foundation.ReportDataGrant", "foundation.WorkflowPolicyConfig", "foundation.SpecialOrderValueBand",
 }
 HIDDEN_WORDS = ("password", "token", "secret")

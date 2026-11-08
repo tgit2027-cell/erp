@@ -32,7 +32,7 @@ export function normalizedWorkspaceHash(hash: string) {
 
 export function routeIsAvailable(
   route: WorkspaceRoute,
-  access: { isStaff: boolean; isSuperuser: boolean; canManageReportPanels: boolean },
+  access: { isStaff: boolean; isSuperuser: boolean; canManageReportPanels: boolean; canManageUsers?: boolean; canImport?: boolean; canSeeFactory?: boolean; canSeeProjects?: boolean; hrPortalEnabled?: boolean; visibleSections?: string[] },
 ) {
   return sidebarSections(access).some((section) => section.id === route.section
     && section.children.some((child) => child.id === route.child));

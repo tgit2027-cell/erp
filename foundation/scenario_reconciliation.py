@@ -21,6 +21,9 @@ from .models import (
     SalesReportLine,
     StockBalance,
     StockMovement,
+    CashEntry,
+    SupplierBill,
+    SupplierPayment,
 )
 
 ZERO = Decimal("0.00")
@@ -110,7 +113,27 @@ def _build(unit):
     invoices_without_lines = invoices.annotate(line_count=Count("lines")).filter(line_count=0).count()
 
     all_payments = _total(merchandise, "amount")
+    # Only approved payments are posted; goods payments clear receipt clearing, charge payments landed-charge clearing.
+    supplier_payments = SupplierPayment.objects.filter(
+        business_unit=unit, is_synthetic=True, status=SupplierPayment.Status.APPROVED,
+    )
+    supplier_paid = _total(supplier_payments, "paid_value")
+    supplier_cleared = _total(supplier_payments.filter(charge__isnull=True), "cleared_value")
+    charges_cleared = _total(supplier_payments.filter(charge__isnull=False), "cleared_value")
+    exchange_difference = _total(supplier_payments, "exchange_difference")
+    grni_released, _ = _ledger(unit, "TEST_GRNI", kind="supplier_payment")
+    landed_released, _ = _ledger(unit, "TEST_LANDED_CLEARING", kind="supplier_payment")
+    bill_differences = _total(
+        SupplierBill.objects.filter(business_unit=unit, is_synthetic=True, status=SupplierBill.Status.ACCEPTED),
+        "difference_value",
+    )
+    bill_debit, bill_credit = _ledger(unit, "TEST_GRNI", kind="supplier_bill")
+    _, fx_gain = _ledger(unit, "TEST_FX_GAIN")
+    fx_loss, _ = _ledger(unit, "TEST_FX_LOSS")
     cash_debit, cash_credit = _ledger(unit, "TEST_CASH")
+    cash_entries = CashEntry.objects.filter(business_unit=unit, is_synthetic=True)
+    bank_net = (_total(cash_entries.filter(kind=CashEntry.Kind.INTEREST), "amount")
+                - _total(cash_entries.filter(kind=CashEntry.Kind.BANK_CHARGE), "amount"))
     deposits_held = _total(merchandise.filter(quote__delivered_at__isnull=True), "amount")
     deposit_debit, deposit_credit = _ledger(unit, "TEST_CUSTOMER_DEPOSITS")
     receivable_total_debit, receivable_total_credit = _ledger(unit, "TEST_RECEIVABLE")
@@ -153,8 +176,17 @@ def _build(unit):
          invoiced_total, paid_before_delivery + balance_due_at_delivery),
         ("payments", "Collections recorded on invoiced quotes cover at least what was paid before delivery",
          paid_before_delivery, min(collected_on_invoices, paid_before_delivery)),
-        ("payments", "Cash in the journal equals all customer payments recorded",
-         all_payments, cash_debit - cash_credit),
+        ("payments", "Cash in the journal equals customer payments received less supplier payments made, "
+                     "plus interest less bank charges",
+         all_payments - supplier_paid + bank_net, cash_debit - cash_credit),
+        ("payments", "Supplier payments released the same receipt value from receipt clearing",
+         supplier_cleared, grni_released),
+        ("payments", "Accepted supplier bill differences moved receipt clearing by the same value",
+         bill_differences, bill_credit - bill_debit),
+        ("payments", "Charge payments released the same value from landed-charge clearing",
+         charges_cleared, landed_released),
+        ("payments", "Exchange gain less loss in the journal equals the supplier payment differences",
+         exchange_difference, fx_gain - fx_loss),
         ("payments", "Deposits owed to customers equal payments on quotes not yet delivered",
          deposits_held, deposit_credit - deposit_debit),
         ("payments", "Receivable balance equals what customers still owe on invoices",

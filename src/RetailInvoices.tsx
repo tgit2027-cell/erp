@@ -24,6 +24,7 @@ type InvoiceLine = {
   item_code: string;
   description: string;
   brand_name: string;
+  image_path?: string;
   quantity: string;
   list_unit_price: Money;
   discount_percent: string;
@@ -102,7 +103,7 @@ function InvoiceDocument({ invoice, onClose }: { invoice: InvoiceDetail; onClose
           </tr></thead>
           <tbody>{invoice.lines.map((line) => (
             <tr key={`${line.item_code}-${line.journal_entry_ids.join("-")}`}>
-              <td><strong>{line.description}</strong><small>{line.item_code} · {line.brand_name}</small></td>
+              <td className="ri-item">{line.image_path && /^\/(media|assets|api\/items)\/[A-Za-z0-9_\/-]+\.(png|jpg|jpeg|webp)$/.test(line.image_path) && <img src={line.image_path} alt="" width={56} height={56} loading="lazy" />}<span><strong>{line.description}</strong><small>{line.item_code} · {line.brand_name}</small></span></td>
               <td className="rc-number">{line.quantity}</td>
               <td className="rc-number">{money(line.list_unit_price)}</td>
               <td className="rc-number">{line.discount_percent}%</td>

@@ -1,0 +1,431 @@
+/*
+ * Friendly refresh of the ERP look and feel.
+ *
+ * Loaded last (see main.tsx) so it layers on top of style.css and the
+ * section stylesheets without editing them. Goals: a light, calm sidebar with
+ * coloured section badges, rounded cards and controls, softer shadows, and
+ * readable text. Business-unit colours (Tivoli, Roche Bobois, Natuzzi, custom
+ * palettes) still drive every accent through the existing --brand tokens.
+ *
+ * Small font sizes declared elsewhere are lifted to a readable size at build
+ * time by scripts/postcss-readable-type.mjs, so this file only needs to deal
+ * with shape, colour and spacing.
+ */
+
+:root {
+  --font-ui: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif;
+  --font-display: var(--font-ui);
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+  --canvas: #f7f7f5;
+  --surface: #ffffff;
+  --border-soft: #e7e6e1;
+  --border-strong: #d6d4cd;
+  --text-strong: #1f1e1b;
+  --text-body: #3a3934;
+  --text-muted: #5e5c55;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --shadow-xs: 0 1px 2px rgb(24 23 20 / 5%);
+  --shadow-sm: 0 1px 3px rgb(24 23 20 / 6%), 0 1px 2px rgb(24 23 20 / 4%);
+  --shadow-md: 0 6px 18px rgb(24 23 20 / 8%), 0 2px 6px rgb(24 23 20 / 4%);
+  font-family: var(--font-ui);
+}
+
+body {
+  background: var(--canvas);
+  color: var(--text-body);
+  font-family: var(--font-ui);
+  line-height: 1.45;
+}
+
+/* Headings everywhere use the same friendly sans-serif instead of fallbacks. */
+h1, h2, h3, h4,
+.page-heading h1, .welcome-copy h2, .planned-panel h2, .login-card h1,
+.section-title-row h2, .content-card h2 {
+  font-family: var(--font-display);
+  color: var(--text-strong);
+}
+
+/* ---------- Sidebar: light, calm, unit-tinted ---------- */
+
+.sidebar {
+  /* Re-point the sidebar tokens for everything inside it (flyouts included). */
+  --sidebar: var(--sand);
+  --sidebar-muted: var(--text-muted);
+  --sidebar-ink: var(--text-body);
+  background: var(--sidebar);
+  color: var(--sidebar-ink);
+  border-right: 1px solid var(--border-soft);
+  width: 276px;
+}
+.main-content { width: calc(100% - 276px); margin-left: 276px; }
+@media (max-width: 1120px) {
+  .sidebar { width: 244px; }
+  .main-content { width: calc(100% - 244px); margin-left: 244px; }
+}
+@media (max-width: 760px) {
+  .sidebar { width: 64px; }
+  .main-content { width: calc(100% - 64px); margin-left: 0; }
+}
+
+.sidebar-brand {
+  height: 72px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.sidebar-brand .brand-monogram,
+.brand-monogram {
+  border-radius: 9px;
+  background: var(--brand);
+  color: #fff;
+  font-family: Georgia, "Times New Roman", serif;
+}
+.sidebar-brand .brand-monogram { color: #fff; box-shadow: var(--shadow-sm); }
+.sidebar-brand strong { color: var(--text-strong); letter-spacing: .12em; }
+.sidebar-brand span { color: var(--text-muted); }
+
+.workspace-label, .nav-group-label {
+  padding: 22px 22px 8px;
+  color: var(--text-muted);
+  letter-spacing: .1em;
+}
+.nav-divider { margin: 14px 20px 0; background: var(--border-soft); }
+
+.nav-item,
+.nav-section-toggle {
+  border-radius: 8px;
+  color: var(--sidebar-ink);
+  font-weight: 500;
+}
+.nav-item:hover,
+.nav-section-toggle:hover {
+  background: color-mix(in srgb, var(--brand) 7%, transparent);
+  color: var(--text-strong);
+}
+.nav-item.active,
+.nav-section-toggle.is-current {
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  font-weight: 600;
+  box-shadow: none;
+}
+.section-navigation-children .nav-item {
+  min-height: 34px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-left: 36px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.3;
+}
+.section-navigation-children .nav-item:hover { color: var(--text-strong); }
+.section-navigation-children .nav-item.active { color: var(--brand-deep); }
+
+/* Keyboard focus inside the light sidebar uses the deep brand colour. */
+.sidebar .nav-item:focus-visible,
+.sidebar .nav-section-toggle:focus-visible,
+.sidebar .favorite-toggle:focus-visible {
+  outline: 2px solid var(--brand-deep);
+  outline-offset: 2px;
+}
+
+/* Section badges: a coloured rounded square per area, like a project "space". */
+.nav-icon { color: var(--text-muted); }
+.nav-icon.nav-number {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--section-colour, var(--brand));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.nav-section-toggle .nav-icon { flex: 0 0 22px; }
+[data-section="dashboard"] { --section-colour: #57534e; }
+[data-section="retail"] { --section-colour: #b24f00; }
+[data-section="procurement"] { --section-colour: #946600; }
+[data-section="inventory"] { --section-colour: #946600; }
+[data-section="delivery"] { --section-colour: #946600; }
+[data-section="logistics"] { --section-colour: #946600; }
+[data-section="factory"] { --section-colour: #7a4a2a; }
+[data-section="finance"] { --section-colour: #0f766e; }
+[data-section="hr"] { --section-colour: #6e46a8; }
+[data-section="governance"] { --section-colour: #475569; }
+[data-section="reports"] { --section-colour: #0e7490; }
+[data-section="purchasing"] { --section-colour: #4338ca; }
+
+.favorite-toggle { color: #a8a59c; border-radius: 6px; }
+.favorite-toggle:hover:not(:disabled) { background: color-mix(in srgb, var(--brand) 8%, transparent); }
+.favorite-toggle:hover:not(:disabled), .favorite-toggle.is-favorite { color: #d49b1f; }
+.favorites-empty { color: var(--text-muted); }
+
+.sidebar-bottom { border-top: 1px solid var(--border-soft); }
+.sidebar-bottom strong { color: var(--text-strong); }
+.sidebar-bottom div span { color: var(--text-muted); }
+
+@media (max-width: 760px) {
+  .section-navigation-children {
+    border-radius: var(--radius);
+    border-color: var(--border-soft);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+/* ---------- Top bar ---------- */
+
+.topbar {
+  height: 60px;
+  background: rgb(255 255 255 / 92%);
+  border-bottom: 1px solid var(--border-soft);
+}
+.breadcrumb { color: var(--text-muted); }
+.breadcrumb strong { color: var(--text-strong); }
+.unit-select-label { color: var(--text-muted); }
+.unit-select-label select {
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text-strong);
+}
+.avatar { width: 32px; height: 32px; background: var(--brand); color: #fff; }
+.user-name { color: var(--text-body); }
+.button-quiet { color: var(--text-muted); border-radius: 8px; padding: 0 10px; }
+.button-quiet:hover { background: #f0efeb; color: var(--text-strong); }
+
+/* ---------- Page heading and overview ---------- */
+
+.page { padding: 28px 36px 24px; }
+/* Keep the narrower page margins on smaller screens (this file loads after style.css). */
+@media (max-width: 1120px) { .page { padding-right: 25px; padding-left: 25px; } }
+@media (max-width: 760px) { .page { padding: 24px 16px 16px; } }
+.page-heading { margin-bottom: 22px; }
+.page-heading h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
+.eyebrow, .welcome-kicker, .small-label { letter-spacing: .08em; }
+.prototype-badge {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-muted);
+  padding: 7px 13px;
+  box-shadow: var(--shadow-xs);
+}
+
+.welcome-panel {
+  border-radius: var(--radius-lg);
+  background: linear-gradient(120deg, var(--brand-soft) 0%, color-mix(in srgb, var(--brand-soft) 55%, white) 100%);
+  border: 1px solid color-mix(in srgb, var(--brand) 12%, white);
+}
+.welcome-copy h2 { letter-spacing: -.02em; }
+.welcome-copy p { color: var(--text-body); }
+
+.module-grid { gap: 12px; }
+.module-card {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow .16s ease, transform .16s ease, border-color .16s ease;
+}
+.module-card:hover {
+  border-color: color-mix(in srgb, var(--brand) 30%, white);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.module-name { color: var(--text-strong); }
+.planned-tag {
+  padding: 3px 8px;
+  margin-top: auto;
+  border-radius: var(--radius-pill);
+  background: #f1f0ec;
+  letter-spacing: .06em;
+}
+.module-card:nth-child(3) .planned-tag { background: var(--brand-soft); }
+
+/* ---------- Cards and panels (shared across sections) ---------- */
+
+/* Soft corners on every box in the work area. :where() keeps this at zero
+   specificity, so any section that sets its own radius (circles, tabs) wins. */
+:where(.main-content) :where(div, section, aside, article, fieldset, form, details, figure, li, dl) {
+  border-radius: 8px;
+}
+:where(.main-content) :where(.page, .page-heading, .table-scroll, [class*="table-wrap"], [class*="table-scroll"]) {
+  border-radius: 0;
+}
+.purchasing-workbench {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+}
+
+.content-card, .planned-panel, .login-card {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.bottom-grid { gap: 14px; margin-top: 14px; }
+:where(.main-content) :is(section, article, aside, div)[class*="card"]:not(.module-card) {
+  border-radius: var(--radius);
+}
+:where(.main-content) :is(section, div)[class*="panel"]:not(.welcome-panel) {
+  border-radius: var(--radius);
+}
+.company-mark, .unit-marker, .example-count, .planned-icon { border-radius: 8px; }
+.location-kind, .unit-pill, .packing-row-status, .packing-preview-badge {
+  border-radius: var(--radius-pill);
+}
+
+/* ---------- Buttons ---------- */
+
+.button {
+  border-radius: 8px;
+  font-weight: 600;
+}
+.button-primary, .button-dark {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--brand-deep) 30%, transparent);
+}
+.button-outline { border-radius: 8px; border-color: var(--border-strong); }
+:where(.main-content) button[class*="button"]:not(.nav-item):not(.favorite-toggle) {
+  border-radius: 8px;
+}
+
+/* ---------- Form fields ---------- */
+
+:where(.main-content, .login-page) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  border-radius: 8px;
+}
+.login-form input { border-color: var(--border-strong); border-radius: 8px; }
+.search-box { border-radius: 8px; border-color: var(--border-strong); background: var(--surface); }
+:where(.main-content) :is(input, select, textarea):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand) 45%, white);
+  outline-offset: 1px;
+}
+
+/* ---------- Tables ---------- */
+
+:where(.main-content) table { font-variant-numeric: tabular-nums; }
+thead { background: #f6f5f2; }
+th { color: var(--text-muted); letter-spacing: .06em; }
+td { color: var(--text-body); border-bottom-color: #efeeea; }
+td strong { color: var(--text-strong); }
+:where(.main-content) tbody tr { transition: background-color .12s ease; }
+:where(.main-content) tbody tr:hover { background: color-mix(in srgb, var(--brand) 4%, white); }
+.table-scroll, [class*="table-scroll"] { border-radius: var(--radius); }
+
+/* ---------- Tabs: soft segmented control (sections name them "*-tabs") ---------- */
+
+.main-content [class$="-tabs"] {
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: #efeeea;
+}
+.main-content [class$="-tabs"] button {
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-body);
+}
+.main-content [class$="-tabs"] button:hover { background: rgb(255 255 255 / 65%); }
+.main-content [class$="-tabs"] button[aria-pressed="true"],
+.main-content [class$="-tabs"] button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--brand-deep);
+  box-shadow: var(--shadow-sm);
+}
+.main-content [role="tab"] { border-radius: 8px; }
+
+/* ---------- Alerts ---------- */
+
+.alert { border-radius: var(--radius); }
+
+/* ---------- Login ---------- */
+
+.login-page {
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--brand-soft) 90%, white) 0, var(--canvas) 60%);
+}
+.login-card { padding: 40px; }
+.login-brand .brand-monogram { border-radius: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .module-card, .module-card:hover { transition: none; transform: none; }
+}
+
+/* ---------- Section icons on the coloured badges ----------
+   The section number stays in the page (hidden visually) and a simple
+   white line icon is drawn on top. */
+.nav-icon.nav-number[data-section] {
+  position: relative;
+  color: transparent;
+  font-size: 0;
+}
+.nav-icon.nav-number[data-section]::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+[data-section="dashboard"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2011l9-7%209%207%22/%3E%3Cpath%20d%3D%22M5%2010v10h14V10%22/%3E%3C/svg%3E"); }
+[data-section="retail"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6%207h12l1%2013H5z%22/%3E%3Cpath%20d%3D%22M9%207a3%203%200%200%201%206%200%22/%3E%3C/svg%3E"); }
+[data-section="procurement"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22/%3E%3Cpath%20d%3D%22M3%2012h18%22/%3E%3Cpath%20d%3D%22M12%203a14%2014%200%200%201%200%2018a14%2014%200%200%201%200-18%22/%3E%3C/svg%3E"); }
+[data-section="inventory"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%207l9-4%209%204v10l-9%204-9-4z%22/%3E%3Cpath%20d%3D%22M3%207l9%204%209-4%22/%3E%3Cpath%20d%3D%22M12%2011v10%22/%3E%3C/svg%3E"); }
+[data-section="delivery"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M2%206h12v10H2z%22/%3E%3Cpath%20d%3D%22M14%209h4l3%203v4h-7%22/%3E%3Ccircle%20cx%3D%226%22%20cy%3D%2218%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2217%22%20cy%3D%2218%22%20r%3D%222%22/%3E%3C/svg%3E"); }
+[data-section="finance"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%2220%22%20height%3D%2212%22%20rx%3D%222%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%223%22/%3E%3C/svg%3E"); }
+[data-section="hr"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%228%22%20r%3D%223%22/%3E%3Cpath%20d%3D%22M3%2020a6%206%200%200%201%2012%200%22/%3E%3Cpath%20d%3D%22M16%205a3%203%200%200%201%200%206%22/%3E%3Cpath%20d%3D%22M18%2014a5%205%200%200%201%203%206%22/%3E%3C/svg%3E"); }
+[data-section="governance"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203l8%203v6c0%205-3.5%208-8%209c-4.5-1-8-4-8-9V6z%22/%3E%3C/svg%3E"); }
+[data-section="reports"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2020V10%22/%3E%3Cpath%20d%3D%22M10%2020V4%22/%3E%3Cpath%20d%3D%22M16%2020v-7%22/%3E%3Cpath%20d%3D%22M22%2020H2%22/%3E%3C/svg%3E"); }
+[data-section="purchasing"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M8%204h8v3H8z%22/%3E%3Cpath%20d%3D%22M16%205h2a1%201%200%200%201%201%201v14a1%201%200%200%201-1%201H6a1%201%200%200%201-1-1V6a1%201%200%200%201%201-1h2%22/%3E%3Cpath%20d%3D%22M9%2012h6%22/%3E%3Cpath%20d%3D%22M9%2016h4%22/%3E%3C/svg%3E"); }
+
+/* Area tiles on the landing page (Sam, 5 Nov 2026). */
+.area-home { display: grid; gap: 10px; margin-bottom: 22px; }
+.area-group-label { margin: 6px 0 0; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); }
+.area-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.area-tile { display: flex; align-items: center; gap: 14px; min-height: 92px; padding: 16px 18px; text-align: left; cursor: pointer;
+  background: var(--surface, #fff); border: 1px solid var(--border-soft); border-left: 6px solid var(--brand, #b24f00); border-radius: var(--radius); color: inherit; font: inherit; }
+.area-tile.area-shared { border-left-color: #5b6b7a; }
+.area-tile:hover:not(:disabled), .area-tile:focus-visible { border-color: var(--brand, #b24f00); box-shadow: var(--shadow-md); }
+.area-tile:disabled { cursor: default; opacity: .6; }
+.area-tile.area-current { outline: 2px solid var(--brand, #b24f00); outline-offset: -2px; }
+.area-mark { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; font-weight: 700; font-size: 13px;
+  background: color-mix(in srgb, var(--brand, #b24f00) 12%, transparent); color: var(--brand, #b24f00); }
+.area-shared .area-mark { background: #5b6b7a1f; color: #46535f; }
+.area-text { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.area-text strong { font-size: 15px; }
+.area-text small { color: var(--text-muted); font-size: 12px; line-height: 1.35; }
+.area-tag { font-size: 11px; padding: 3px 8px; border-radius: 10px; background: #00000010; white-space: nowrap; }
+.area-arrow { font-size: 18px; color: var(--text-muted); }
+@media (max-width: 900px) { .area-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .area-grid { grid-template-columns: 1fr; } .area-tile { min-height: 74px; } }
+.ua-area-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 16px; margin-top: 6px; }
+
+/* The plain tiles page after sign-in (Sam, 6 Nov 2026). */
+.area-landing { min-height: 100vh; background: var(--canvas); }
+.area-landing-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 32px;
+  background: var(--surface); border-bottom: 1px solid var(--border-soft); }
+.area-landing-bar .sidebar-brand { padding: 0; border: 0; }
+.area-landing-body { max-width: 1120px; margin: 0 auto; padding: 40px 32px 56px; }
+.area-landing-body h1 { margin: 0 0 4px; font-size: 30px; color: var(--text-strong); }
+.area-landing-body > .muted { margin: 0 0 22px; }
+.area-landing-full { margin-top: 6px; }
+.area-switch { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 16px 8px; padding: 8px 10px;
+  border: 1px solid var(--border-soft); border-radius: var(--radius); background: var(--surface); }
+.area-switch .button { padding: 4px 8px; font-size: 13px; }
+.area-switch-name { font-size: 13px; font-weight: 600; color: var(--text-strong); text-align: right; }
+@media (max-width: 560px) {
+  .area-landing-bar { padding: 12px 16px; }
+  .area-landing-body { padding: 24px 16px 40px; }
+  .area-landing-body h1 { font-size: 24px; }
+}
+
+/* HR Portal sidebar icon: a megaphone for HR announcements. */
+[data-section="portal"] { --section-colour: #6e46a8; }
+[data-section="portal"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2024%2024%22%20fill=%22none%22%20stroke=%22%23fff%22%20stroke-width=%222%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%3E%3Cpath%20d=%22M3%2011l18-7v16L3%2013z%22/%3E%3Cpath%20d=%22M7%2013v5h4v-4%22/%3E%3C/svg%3E"); }
+
+/* Factory sidebar icon: a workshop with a chimney. */
+[data-section="factory"].nav-number::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2021V11l5%203v-3l5%203v-3l5%203V4h3v17z%22%2F%3E%3Cpath%20d%3D%22M3%2021h18%22%2F%3E%3C%2Fsvg%3E"); }

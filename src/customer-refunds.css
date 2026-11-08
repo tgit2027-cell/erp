@@ -1,0 +1,40 @@
+.customer-refunds { display: grid; gap: 14px; padding: 22px; }
+.cr-head h2 { margin: 6px 0; font: 700 22px var(--font-display); }
+.cr-head p { max-width: 780px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.cr-tabs { display: inline-flex; justify-self: start; border: 1px solid var(--ink); }
+.cr-tabs button { min-height: 35px; padding: 0 16px; border: 0; background: white; color: var(--ink); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.cr-tabs button[aria-pressed="true"] { background: var(--ink); color: white; }
+.cr-tabs button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.cr-card { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid var(--line); background: var(--paper); }
+.cr-card header { display: flex; flex-wrap: wrap; gap: 10px; align-items: start; justify-content: space-between; }
+.cr-card h3 { margin: 4px 0 0; font: 700 16px var(--font-display); }
+.cr-card h3 small { margin-left: 8px; color: var(--muted); font-family: inherit; font-size: 11px; font-weight: 600; }
+.cr-status { padding: 3px 9px; border: 1px solid var(--line); font-size: 11px; font-weight: 700; }
+.cr-finance_pending { border-color: #8a5a12; background: #fbf1e0; color: #8a5a12; }
+.cr-refunded { border-color: #2f6b45; background: #eaf3ec; color: #2f6b45; }
+.cr-rejected { border-color: #9b392f; background: #fbecea; color: #9b392f; }
+.cr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.cr-table th, .cr-table td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.cr-table thead th { background: var(--sand); color: var(--muted); font-size: 10px; letter-spacing: .04em; }
+.cr-table small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
+.cr-num { text-align: right !important; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cr-condition { display: inline-block; padding: 1px 7px; font-size: 11px; font-weight: 700; text-transform: capitalize; }
+.cr-condition.is-good { background: #eaf3ec; color: #2f6b45; }
+.cr-condition.is-flagged { background: #fbf1e0; color: #8a5a12; }
+.cr-form { display: grid; gap: 10px; padding-top: 4px; }
+.cr-fields { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.cr-form label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; font-weight: 600; }
+.cr-form input, .cr-form select { min-height: 34px; padding: 6px 8px; border: 1px solid var(--line); background: white; color: var(--ink); font: inherit; font-size: 12px; }
+.cr-note { flex: 1 1 260px; }
+.cr-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.cr-actions .button { margin-top: 0; min-height: 34px; }
+.cr-split { margin: 0; padding: 8px 10px; border-left: 3px solid var(--ink); background: white; font-size: 12px; }
+.cr-problem { margin: 0; color: #9b392f; font-size: 12px; font-weight: 600; }
+.cr-hint { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.cr-notice { margin: 0; padding: 8px 10px; border: 1px solid #2f6b45; background: #eaf3ec; color: #2f6b45; font-size: 12px; }
+.cr-note-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin: 0; }
+.cr-note-facts div { padding: 8px 10px; border: 1px solid var(--line); background: white; }
+.cr-note-facts .cr-wide { grid-column: 1 / -1; }
+.cr-note-facts dt { color: var(--muted); font-size: 10px; font-weight: 700; }
+.cr-note-facts dd { margin: 3px 0 0; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .customer-refunds { padding: 14px; } .cr-table { display: block; overflow-x: auto; } }

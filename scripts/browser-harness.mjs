@@ -37,7 +37,8 @@ export async function browserHarness({ width = 1280, height = 900, mockApi, mock
     "delivery.quote", "delivery.preparation", "delivery.handover", "delivery.quotes", "delivery.storage",
     "delivery.reservations", "delivery.deliveries", "delivery.returns",
     "governance.presentation", "governance.purchasing-config", "governance.reporting",
-    "governance.report-panels", "governance.capacity-admin", "governance.capacity-audit", "governance.transfer-permissions",
+    "governance.report-panels", "governance.capacity-admin", "governance.capacity-audit", "governance.transfer-permissions", "governance.users",
+    "governance.imports",
     "purchasing.quote", "purchasing.transactions", "purchasing.registers",
   ].map((destination) => ({ destination, label: destination.split(".").at(-1) }));
   const availableDestinations = [...legacyDestinations, ...functionKeys];
@@ -122,6 +123,12 @@ export async function browserHarness({ width = 1280, height = 900, mockApi, mock
           } else if (get && /^\/api\/reports\/(purchase_history\/receipts|inventory\/reservations|sales\/deliveries)\/$/.test(url.pathname) &&
             url.searchParams.get("unit") === String(selected)) {
             status = 403; data = { detail: "TEST ONLY existing access denied" };
+          } else if (get && url.pathname === "/api/chat/unread/") {
+            // The sidebar polls the unread-messages count; nobody here has messages.
+            data = { total: 0, conversations: 0 };
+          } else if (get && url.pathname === "/api/inventory/low-stock/" && url.searchParams.get("summary") === "1" &&
+            url.searchParams.get("unit") === String(selected)) {
+            data = { alerts: 0 };
           } else if (get && url.pathname === "/api/warehouse-capacity/") {
             status = 403; data = { detail: "TEST ONLY capacity unassigned" };
           } else {

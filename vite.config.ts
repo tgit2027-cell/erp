@@ -1,18 +1,20 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import readableType from "./scripts/postcss-readable-type.mjs";
+import oneFont from "./scripts/postcss-one-font.mjs";
 
 // Only loopback names are accepted unless VITE_ALLOWED_HOSTS lists the exact
 // extra hostnames (comma-separated) a private preview is served under.
-const djangoProxyTarget = process.env.DJANGO_PROXY_TARGET ?? "http://127.0.0.1:8000";
-
 const allowedHosts = (process.env.VITE_ALLOWED_HOSTS ?? "")
   .split(",")
   .map((host) => host.trim())
   .filter(Boolean);
 
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH ?? "/",
   plugins: [react()],
+  // Lift the prototype's very small font sizes to a readable size everywhere,
+  // and use the ERP's one typeface in every section.
+  css: { postcss: { plugins: [readableType(), oneFont()] } },
   server: {
     host: "127.0.0.1",
     port: 5000,
@@ -29,7 +31,7 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: djangoProxyTarget,
+        target: "http://127.0.0.1:8000",
         // Keep the browser Host intact; the Origin header is forwarded as sent.
         changeOrigin: false,
       },

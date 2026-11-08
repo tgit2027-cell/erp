@@ -141,6 +141,8 @@ class SalesExamplesAPITests(ReportingFixtureMixin, TestCase):
         self.assertNotIn("111346.90", str(operational.data))
         self.assertIn("SalesReportLine records only", operational.data["note"])
 
+        grant_report_data(actor=self.admin, target_user=self.sales, capability=ReportDataCapability.EXPORT,
+                          business_unit=self.unit)
         for file_format in ("xlsx", "docx"):
             exported = client.post(
                 "/api/reports/sales/export/",

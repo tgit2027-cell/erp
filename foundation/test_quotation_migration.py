@@ -3,7 +3,7 @@ from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
 
-from .models import SalesQuote, UserFavorite
+from .models import Item, SalesQuote, UserFavorite
 from .test_collection_favorite_upgrade import CollectionFavoriteUpgradeTests
 from .test_purchasing_workflows import PurchasingFixtureMixin
 
@@ -35,9 +35,10 @@ class QuotationPresentationMigrationTests(PurchasingFixtureMixin, TransactionTes
             quote = SalesQuote.objects.get(pk=quote_id)
             self.assertEqual(quote.presentation_document, {})
             self.variant.refresh_from_db()
-            self.customer.refresh_from_db()
-            self.assertEqual(self.variant.item.name_ar, "")
-            self.assertEqual(self.variant.item.image_path, "")
+            self.customer.refresh_from_db(fields=["contact_ar"])  # later columns (such as qid) do not exist yet
+            item = Item.objects.only("name_ar", "image_path").get(pk=self.variant.item_id)  # later item columns do not exist yet
+            self.assertEqual(item.name_ar, "")
+            self.assertEqual(item.image_path, "")
             self.assertEqual(self.customer.contact_ar, "")
         finally:
             MigrationExecutor(connection).migrate(latest)

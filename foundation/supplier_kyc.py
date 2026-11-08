@@ -205,7 +205,7 @@ def _check_upload(upload):
 def add_document(*, actor, kyc_id, kind, upload):
     _require_opener(actor)
     kyc = _locked(kyc_id)
-    if kyc.status not in EDITABLE:
+    if kyc.status not in EDITABLE and not kyc.documents_due:
         raise InvalidTransaction("Documents can be added only while the file is a draft or was rejected.")
     if kind not in SupplierKycDocument.Kind.values:
         raise InvalidTransaction("Choose what kind of document this is.")
@@ -219,6 +219,10 @@ def add_document(*, actor, kyc_id, kind, upload):
     document.file.save(name, upload, save=False)
     document.save()
     _log(kyc, actor, "document_added", f"{SupplierKycDocument.Kind(kind).label}: {name}")
+    if kyc.documents_due and not missing_documents(kyc):
+        kyc.documents_due = None
+        kyc.save(update_fields=["documents_due"])
+        _log(kyc, actor, "documents_complete")
     return kyc_detail(actor=actor, kyc_id=kyc.pk)
 
 
@@ -290,6 +294,8 @@ def _row(kyc):
         "submitted_at": kyc.submitted_at.isoformat() if kyc.submitted_at else None,
         "decided_by": _person(kyc.decided_by),
         "decided_at": kyc.decided_at.isoformat() if kyc.decided_at else None,
+        "documents_due": kyc.documents_due.isoformat() if kyc.documents_due else None,
+        "frozen": bool(kyc.documents_due and kyc.documents_due < timezone.localdate()),
     }
 
 
@@ -348,6 +354,7 @@ def kyc_detail(*, actor, kyc_id):
             for event in kyc.events.select_related("actor")
         ],
         "can_edit": kyc.status in EDITABLE and can_open(actor),
+        "can_add_documents": (kyc.status in EDITABLE or bool(kyc.documents_due)) and can_open(actor),
         "can_decide": (
             kyc.status == SupplierKyc.Status.SUBMITTED and can_approve(actor) and kyc.opened_by_id != actor.pk
         ),

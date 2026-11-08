@@ -25,7 +25,7 @@ from .models import (
     ReportingRoleMembership,
 )
 from .reporting_exports import report_export_manifest
-from .reporting_services import add_reporting_role_member, assign_report_panel
+from .reporting_services import add_reporting_role_member, assign_report_panel, grant_report_data
 
 
 FIXTURE_PREFIX = "report-review-v1:"
@@ -174,10 +174,10 @@ class ReportingReviewFixtureTests(TestCase):
             ReportDataGrant.objects.filter(role=self.manager_role, revoked_at__isnull=True)
             .values_list("capability", flat=True)
         )
-        self.assertEqual(manager_capabilities, {ReportDataCapability.SALES, ReportDataCapability.BUDGETS})
+        self.assertEqual(manager_capabilities, {ReportDataCapability.SALES, ReportDataCapability.BUDGETS, ReportDataCapability.EXPORT})
         self.assertFalse(
             ReportDataGrant.objects.filter(role=self.manager_role)
-            .exclude(capability__in=(ReportDataCapability.SALES, ReportDataCapability.BUDGETS))
+            .exclude(capability__in=(ReportDataCapability.SALES, ReportDataCapability.BUDGETS, ReportDataCapability.EXPORT))
             .exists()
         )
         admin_client = APIClient()
@@ -373,6 +373,8 @@ class ReportingReviewFixtureTests(TestCase):
         today = timezone.localdate()
         start = today - timedelta(days=30)
         query = self.filters(self.units["RBB"], "daily", start, today)
+        grant_report_data(actor=self.admin, target_user=self.roche, capability=ReportDataCapability.EXPORT,
+                          business_unit=self.units["RBB"])
         client = APIClient(enforce_csrf_checks=True)
         client.force_login(self.roche)
         csrf_token = client.get("/api/auth/csrf/").data["csrfToken"]

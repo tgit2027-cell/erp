@@ -27,7 +27,7 @@ PRESENTATION_FIELDS = {
 def item_presentation(item):
     # No remote image fetch, data URL, executable content, or path traversal.
     path = item.image_path
-    if not re.fullmatch(r"/(?:media|assets)/[A-Za-z0-9_/-]+\.(?:png|jpg|jpeg|webp)", path or ""):
+    if not re.fullmatch(r"/(?:media|assets|api/items)/[A-Za-z0-9_/-]+\.(?:png|jpg|jpeg|webp)", path or ""):
         path = ""
     return {
         "item_code": item.item_code,

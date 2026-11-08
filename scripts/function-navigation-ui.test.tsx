@@ -179,7 +179,7 @@ test("all 45 permission-dependent children render their focused function or expl
   await act(async () => root.render(<App />)); await flush();
   const entries = sidebarSections({ isStaff: true, isSuperuser: true, canManageReportPanels: true })
     .flatMap((section) => section.children.map((child) => ({ route: `${section.id}/${child.id}`, label: child.label })));
-  assert.equal(entries.length, 49);
+  assert.equal(entries.length, 88);
   assert.deepEqual(entries.map(({ route }) => route).sort(), Object.keys(navigationContent).sort());
   const shown = (node: Element) => {
     for (let current: Element | null = node; current; current = current.parentElement) {
@@ -212,7 +212,8 @@ test("all 45 permission-dependent children render their focused function or expl
       assert.match(host.querySelector('[data-workspace-view="finance/main"]')?.textContent ?? "", /STATUS ONLY.*NOT OPERATIONAL FINANCE/);
     }
     if (route === "hr/main") {
-      assert.match(host.querySelector(".planned-panel")?.textContent ?? "", /PLANNED.*NOT IMPLEMENTED/);
+      assert.match(host.querySelector(".staff-records")?.textContent ?? "", /STAFF RECORDS/);
+      assert.equal(host.querySelector(".planned-panel"), null);
     }
   }
   assert.ok(calls.every((call) => call.method === "GET"), "Navigation never submits a transaction or grant");

@@ -20,7 +20,8 @@ export type ReportCapabilityCode =
   | "inventory"
   | "purchase_history"
   | "transfer_history"
-  | "budgets";
+  | "budgets"
+  | "export";
 
 export type ReportFilters = {
   unit?: number | string;
@@ -335,6 +336,26 @@ export function useReportVisual(
   return useReportResource<ReportVisual>(path, query);
 }
 
+export type DashboardLayout = { panels: ReportPanelCode[]; customized: boolean; assigned: ReportPanelCode[] };
+
+export function useDashboardLayout(enabled = true): RemoteState<DashboardLayout> {
+  return useReportResource<DashboardLayout>(enabled ? "/api/reports/dashboard-layout/" : null, String(enabled));
+}
+
+export async function saveDashboardLayout(csrfToken: string, panels: ReportPanelCode[] | null): Promise<DashboardLayout> {
+  return requestJson<DashboardLayout>("/api/reports/dashboard-layout/", panels === null
+    ? { method: "DELETE", headers: { "X-CSRFToken": csrfToken } }
+    : { method: "PUT", headers: { "X-CSRFToken": csrfToken }, body: JSON.stringify({ panels }) });
+}
+
+/** Whether the chosen unit or company is covered by the user's separate export grant. */
+export function canExportScope(catalog: ReportCatalog | null | undefined, unitId: number | null, companyId: number | null) {
+  const grant = catalog?.scopes.export;
+  if (!grant) return false;
+  if (companyId !== null) return grant.companies.some((company) => company.id === companyId);
+  return unitId !== null && grant.business_units.some((unit) => unit.id === unitId);
+}
+
 export function useSalesExamples(
   filters: ReportFilters,
   enabled = true,
@@ -391,11 +412,76 @@ export async function saveReportPanelManagement(
   });
 }
 
+export type ReportExportFormat = "xlsx" | "docx" | "pdf";
+
+export type ReportShareFilters = {
+  period: NonNullable<ReportFilters["period"]>;
+  start: string;
+  end: string;
+  unit?: number;
+  company?: number;
+  location?: number;
+};
+
+export type ReportShareLink = {
+  id: number;
+  panel: ReportPanelCode;
+  panel_label: string;
+  filters: ReportShareFilters;
+  note: string;
+  created_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+  open_count: number;
+  last_opened_at: string | null;
+  state: "active" | "expired" | "revoked";
+  url?: string;
+};
+
+export type SharedReport = {
+  panel: ReportPanelCode;
+  panel_label: string;
+  filters: ReportShareFilters;
+  note: string;
+  shared_by: string;
+  created_at: string;
+  expires_at: string;
+};
+
+export function useReportShareLinks(enabled: boolean): RemoteState<{ links: ReportShareLink[] }> {
+  return useReportResource<{ links: ReportShareLink[] }>(enabled ? "/api/reports/share-links/" : null, String(enabled));
+}
+
+export async function createReportShareLink(
+  csrfToken: string,
+  panel: ReportPanelCode,
+  filters: ReportFilters,
+  note: string,
+): Promise<ReportShareLink> {
+  const { unit, company, location, period, start, end } = filters;
+  return requestJson<ReportShareLink>("/api/reports/share-links/", {
+    method: "POST",
+    headers: { "X-CSRFToken": csrfToken },
+    body: JSON.stringify({ unit, company, location, period, start, end, panel, note }),
+  });
+}
+
+export async function revokeReportShareLink(csrfToken: string, id: number): Promise<ReportShareLink> {
+  return requestJson<ReportShareLink>(`/api/reports/share-links/${id}/revoke/`, {
+    method: "POST",
+    headers: { "X-CSRFToken": csrfToken },
+  });
+}
+
+export async function openSharedReport(token: string): Promise<SharedReport> {
+  return requestJson<SharedReport>(`/api/reports/shared/${encodeURIComponent(token)}/`);
+}
+
 export async function downloadReportExport(
   csrfToken: string,
   panel: ReportPanelCode,
   filters: ReportFilters,
-  format: "xlsx" | "docx",
+  format: ReportExportFormat,
 ): Promise<void> {
   const response = await fetch(`/api/reports/${panel}/export/`, {
     method: "POST",

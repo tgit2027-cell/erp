@@ -47,3 +47,5 @@
 .kyc-history { margin: 0; padding-left: 18px; font-size: 11px; line-height: 1.7; }
 @media (max-width: 640px) { .supplier-kyc { padding: 14px; } }
 .kyc-table th[scope="row"] { font-size: 12px; text-transform: none; letter-spacing: normal; }
+.kyc-due { color: #8a5a00; background: #fff7e3; }
+.kyc-frozen { color: #9b392f; background: #fbecea; }

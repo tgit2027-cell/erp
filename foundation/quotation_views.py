@@ -11,11 +11,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .access import active_grants
+from .customers import number_search
 from .models import (
     ApprovedSellingPrice, BusinessUnitRoleAssignment, BusinessUnitWorkCalendar,
     Item, StockBalance, SyntheticCounterparty, UserActionGrant, Variant,
 )
-from .purchasing_services import DISCOUNT_CEILINGS
+from .approval_limits import discount_ceilings, person_discount
 from .purchasing_views import _purchasing_unit_for_user, _query_id
 from .quotation_presentation import item_presentation
 
@@ -78,7 +79,9 @@ def _customers():
 def _customer_rows(parties):
     return [
         {
-            "counterparty_id": party.pk, "code": party.code,
+            "counterparty_id": party.pk, "code": party.code, "client_number": party.client_number,
+            "project_number": party.project_number, "title_label": party.get_title_display() if party.title else "",
+            "qid": party.qid, "qid_declined": party.qid_declined,
             "display_name": party.name, "name_ar": party.name_ar,
             "party_type": "customer", "contact_en": party.contact_en, "contact_ar": party.contact_ar,
         } for party in parties
@@ -129,6 +132,7 @@ class QuotationChoicesView(APIView):
         calendar = BusinessUnitWorkCalendar.objects.filter(business_unit=unit, is_synthetic=True).first()
         prices = _current_prices(unit)
         customers = _customers()
+        own_discount = person_discount(request.user, unit)
         return Response({
             "business_unit": {"id": unit.pk, "code": unit.code, "name": unit.name},
             # Only the first page; the item and customer search endpoints return the rest.
@@ -144,8 +148,10 @@ class QuotationChoicesView(APIView):
                 for row in roles
             ],
             "discount_ceiling": format(max(
-                (DISCOUNT_CEILINGS.get(row.role, 0) for row in roles), default=0,
+                (discount_ceilings(unit).get(row.role, 0) for row in roles), default=0,
             ), ".2f"),
+            # The person's own discount for selling stock items, when an admin set one; it replaces the role ceiling there.
+            "stock_discount_ceiling": format(own_discount, ".2f") if own_discount is not None else None,
             "work_calendar": {
                 "is_configured": bool(calendar and calendar.is_configured),
                 "closed_weekdays": [], "closed_dates": [],
@@ -192,9 +198,14 @@ class QuotationCustomerSearchView(APIView):
         else:
             term = _search_term(request.query_params)
             if term:
-                customers = customers.filter(
+                match = (
                     Q(code__icontains=term) | Q(name__icontains=term) | Q(name_ar__icontains=term)
                     | Q(contact_en__icontains=term)  # phone numbers and email live in the contact text
+                    | number_search(term)
                 )
+                digits = term.replace(" ", "").replace("-", "")
+                if digits.isdigit():
+                    match |= Q(qid__startswith=digits)
+                customers = customers.filter(match)
         rows = list(customers[:CHOICE_PAGE + 1])
         return Response({"rows": _customer_rows(rows[:CHOICE_PAGE]), "more": len(rows) > CHOICE_PAGE})

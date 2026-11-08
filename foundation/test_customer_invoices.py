@@ -120,7 +120,7 @@ class CustomerInvoiceTests(PurchasingFixtureMixin, TestCase):
         self.assertEqual(detail.data["invoice_total"], "4000.00")
         self.assertEqual(set(detail.data["lines"][0]), {
             "item_code", "description", "brand_name", "quantity", "list_unit_price",
-            "discount_percent", "net_unit_price", "line_total", "journal_entry_ids",
+            "discount_percent", "net_unit_price", "line_total", "journal_entry_ids", "image_path",
         })
         self.assertNotIn("cost", str(detail.data).lower())
         found = client.get("/api/purchasing/invoices/", {"business_unit_id": self.unit.pk, "number": invoice.number.lower()})

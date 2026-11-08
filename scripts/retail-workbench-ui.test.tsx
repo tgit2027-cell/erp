@@ -459,9 +459,9 @@ test("retail sidebar children map to stable function hashes and preserve destina
   await renderUnit(1);
   const sections = sidebarSections({ isStaff: false, isSuperuser: false, canManageReportPanels: false });
   const retail = sections.find((section) => section.id === "retail");
-  assert.deepEqual(retail.children.map(({ id }) => id), ["main", "quote", "actions", "register", "collections", "invoices"]);
+  assert.deepEqual(retail.children.map(({ id }) => id), ["main", "quote", "actions", "register", "collections", "invoices", "customers", "commission"]);
   assert.deepEqual(retail.children.map(({ id }) => workspaceHash("retail", id)), [
-    "#/retail/main", "#/retail/quote", "#/retail/actions", "#/retail/register", "#/retail/collections", "#/retail/invoices",
+    "#/retail/main", "#/retail/quote", "#/retail/actions", "#/retail/register", "#/retail/collections", "#/retail/invoices", "#/retail/customers", "#/retail/commission",
   ]);
   assert.equal(host.querySelector('[data-workspace-view="retail/main"]'), null, "Legacy direct component rendering does not opt into routed focused views.");
   assert.deepEqual(sections.map(({ id }) => id).slice(0, 4), ["retail", "procurement", "inventory", "delivery"]);

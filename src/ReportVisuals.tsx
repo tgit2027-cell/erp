@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { useReportVisual } from "./reporting-api";
+import { saveDashboardLayout, useDashboardLayout, useReportVisual } from "./reporting-api";
 import type { ReportFilters, ReportPanelCode, ReportVisual, VisualChart } from "./reporting-api";
 import "./report-visuals.css";
 
@@ -228,14 +228,83 @@ function PanelCard({ panel, label, filters }: { panel: ReportPanelCode; label: s
   );
 }
 
-export function VisualDashboard({ panels, filters }: {
+function Customizer({ panels, chosen, csrfToken, onSaved, onCancel }: {
+  panels: Array<{ code: ReportPanelCode; label: string }>;
+  chosen: ReportPanelCode[];
+  csrfToken: string;
+  onSaved: () => void;
+  onCancel: () => void;
+}) {
+  const [order, setOrder] = useState<ReportPanelCode[]>(() => [
+    ...chosen, ...panels.map((panel) => panel.code).filter((code) => !chosen.includes(code)),
+  ]);
+  const [shown, setShown] = useState(() => new Set(chosen));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const label = (code: ReportPanelCode) => panels.find((panel) => panel.code === code)?.label ?? code;
+  const move = (index: number, step: number) => setOrder((current) => {
+    const next = [...current];
+    [next[index], next[index + step]] = [next[index + step], next[index]];
+    return next;
+  });
+  async function save(reset: boolean) {
+    setBusy(true);
+    setError("");
+    try {
+      await saveDashboardLayout(csrfToken, reset ? null : order.filter((code) => shown.has(code)));
+      onSaved();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "The layout could not be saved.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="viz-customize" aria-labelledby="viz-customize-title">
+      <h3 id="viz-customize-title">Customize your dashboard</h3>
+      <p>Choose which of your report panels to show and in what order. Only panels assigned to you are listed.</p>
+      <ol>{order.map((code, index) => <li key={code}>
+        <label><input type="checkbox" checked={shown.has(code)} onChange={(event) => setShown((current) => {
+          const next = new Set(current);
+          if (event.target.checked) next.add(code); else next.delete(code);
+          return next;
+        })} />{label(code)}</label>
+        <span className="viz-move">
+          <button type="button" aria-label={`Move ${label(code)} up`} disabled={index === 0} onClick={() => move(index, -1)}>↑</button>
+          <button type="button" aria-label={`Move ${label(code)} down`} disabled={index === order.length - 1} onClick={() => move(index, 1)}>↓</button>
+        </span>
+      </li>)}</ol>
+      {error && <p className="viz-denied" role="alert">{error}</p>}
+      <div className="viz-customize-actions">
+        <button type="button" className="button button-dark" disabled={busy || shown.size === 0} onClick={() => void save(false)}>Save layout</button>
+        <button type="button" className="button button-outline" disabled={busy} onClick={() => void save(true)}>Show all panels</button>
+        <button type="button" className="button button-outline" disabled={busy} onClick={onCancel}>Cancel</button>
+      </div>
+    </section>
+  );
+}
+
+export function VisualDashboard({ panels, filters, csrfToken }: {
   panels: Array<{ code: ReportPanelCode; label: string }>;
   filters: ReportFilters;
+  csrfToken: string;
 }) {
+  const layout = useDashboardLayout();
+  const [editing, setEditing] = useState(false);
+  const assigned = panels.map((panel) => panel.code);
+  // A missing or failed layout falls back to every assigned panel; the server rechecks each panel anyway.
+  const chosen = (layout.data?.panels ?? assigned).filter((code) => assigned.includes(code));
+  const shown = chosen.length ? chosen : assigned;
   return (
     <div className="viz-dashboard">
-      <p className="viz-intro">Charts use the same data and permissions as the standard reports. Hover or tab to a chart for exact values, or open “Show as table”. A panel without data access for this scope says so.</p>
-      {panels.map((panel) => <PanelCard key={panel.code} panel={panel.code} label={panel.label} filters={filters} />)}
+      <div className="viz-dashboard-head">
+        <p className="viz-intro">Charts use the same data and permissions as the standard reports. Hover or tab to a chart for exact values, or open “Show as table”. A panel without data access for this scope says so.</p>
+        {!editing && <button type="button" className="button button-outline" onClick={() => setEditing(true)}>Customize dashboard</button>}
+      </div>
+      {editing && <Customizer panels={panels} chosen={shown} csrfToken={csrfToken}
+        onSaved={() => { setEditing(false); layout.refresh(); }} onCancel={() => setEditing(false)} />}
+      {layout.loading && <div className="report-skeleton" role="status" aria-label="Loading your dashboard layout"><span /><span /></div>}
+      {!layout.loading && shown.map((code) => <PanelCard key={code} panel={code} label={panels.find((panel) => panel.code === code)?.label ?? code} filters={filters} />)}
     </div>
   );
 }

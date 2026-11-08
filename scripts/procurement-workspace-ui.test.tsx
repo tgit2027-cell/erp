@@ -13,8 +13,6 @@ let calls: { url: URL; options: RequestInit }[];
 let posts: { url: URL; options: RequestInit; payload: Record<string, unknown> }[];
 let rowsByUnit: Map<number, Record<string, unknown>[]>;
 let commitConflictCount: number;
-let createdCounterparties: Record<string, unknown>[];
-let denyCustomerCreation: boolean;
 let denyOrderAccess: boolean;
 let denyReceiptRegister: boolean;
 let foreignReceiptDetail: boolean;
@@ -125,8 +123,6 @@ beforeEach(() => {
   posts = [];
   rowsByUnit = new Map();
   commitConflictCount = 0;
-  createdCounterparties = [];
-  denyCustomerCreation = false;
   denyOrderAccess = false;
   denyReceiptRegister = false;
   foreignReceiptDetail = false;
@@ -168,12 +164,6 @@ beforeEach(() => {
         updateReceived(Number(payload.business_unit_id), payload);
         return Promise.resolve(json({ purchase_receipt_id: 900 + posts.length }, 201));
       }
-      if (url.pathname === "/api/governance/purchasing/counterparties/") {
-        if (denyCustomerCreation) return Promise.resolve(json({ detail: "TEST ONLY staff required" }, 403));
-        const created = { counterparty_id: 100 + createdCounterparties.length, party_type: payload.party_type, code: payload.code, name: payload.name };
-        createdCounterparties.push(created);
-        return Promise.resolve(json(created, 201));
-      }
       throw new Error(`Unexpected procurement write ${url.pathname}`);
     }
     assert.equal(options.method ?? "GET", "GET", `Unexpected method for ${url.pathname}`);
@@ -188,7 +178,7 @@ beforeEach(() => {
     }
     if (url.pathname === "/api/governance/purchasing/counterparties/") {
       const filter = url.searchParams.get("party_type");
-      const items = filter === "supplier" ? [supplier] : filter === "customer" ? [customer, ...createdCounterparties] : [supplier, customer, ...createdCounterparties];
+      const items = filter === "supplier" ? [supplier] : filter === "customer" ? [customer] : [supplier, customer];
       return Promise.resolve(json(page(items)));
     }
     if (url.pathname === "/api/reports/purchase_history/receipts/") {
@@ -508,17 +498,6 @@ test("supplier directory remains staff-only and Procurement makes only the exist
   await click(host.querySelector('[data-register-tab="counterparties"]'));
   assert.match(host.textContent ?? "", /TEST ONLY Atlas Furnishings/);
   assert.match(host.textContent ?? "", /STAFF-ONLY DIRECTORY/);
-  assert.ok(host.querySelector("#pr-customer-create-title"));
-
-  await setValue(host.querySelector<HTMLInputElement>("#pr-new-customer-code")!, "test-cust-new");
-  await setValue(host.querySelector<HTMLInputElement>("#pr-new-customer-name")!, "TEST ONLY New customer");
-  await submit(host.querySelector<HTMLFormElement>("#pr-new-customer-code")?.closest("form") ?? null);
-  const create = posts.find((post) => post.url.pathname === "/api/governance/purchasing/counterparties/");
-  assert.ok(create);
-  assert.deepEqual(create.payload, { party_type: "customer", code: "TEST-CUST-NEW", name: "TEST ONLY New customer" });
-  assert.equal(new Headers(create.options.headers).get("X-CSRFToken"), "TEST_ONLY_CSRF");
-  assert.match(host.textContent ?? "", /Synthetic customer TEST-CUST-NEW created/);
-  assert.match(host.textContent ?? "", /TEST-CUST-NEW/);
 });
 
 test("first Unit B commit clears Unit A supplier context and late Unit A POST outcome cannot replace B", async () => {

@@ -25,6 +25,7 @@ from .models import (
     QuoteReservation,
     ReportBudget,
     ReportDataCapability,
+    ReportDashboardLayout,
     ReportDataGrant,
     ReportExportAudit,
     ReportPanelGrant,
@@ -1900,6 +1901,57 @@ def available_report_scopes(*, actor):
             ],
         }
     return scopes
+
+
+def require_report_export(*, actor, report):
+    """Exporting is its own grant, scoped like data grants: unit or whole company."""
+    grants = _effective_data_grants(actor, ReportDataCapability.EXPORT)
+    company = report["scope"].get("company")
+    if report["scope"].get("scope_type") == "company" and company:
+        if grants.filter(legal_entity_id=company["id"], business_unit__isnull=True).exists():
+            return
+        raise ReportingPermissionDenied("Exporting a company-wide report needs the company-wide export permission.")
+    units = BusinessUnit.objects.filter(pk__in=report["scope"].get("business_unit_ids", []))
+    for unit in units:
+        if not (
+            grants.filter(business_unit=unit).exists()
+            or grants.filter(legal_entity_id=unit.legal_entity_id, business_unit__isnull=True).exists()
+        ):
+            raise ReportingPermissionDenied(f"You do not have the export permission for {unit.name}.")
+    if not units:
+        raise ReportingPermissionDenied("You do not have the export permission for this report.")
+
+
+def dashboard_layout(*, actor):
+    """The user's chosen panels, limited to those still assigned; all assigned panels by default."""
+    assigned = [panel["code"] for panel in available_report_panels(actor=actor)]
+    layout = ReportDashboardLayout.objects.filter(user=actor).first()
+    if layout is None:
+        return {"panels": assigned, "customized": False, "assigned": assigned}
+    chosen = [panel for panel in layout.panels if panel in assigned]
+    return {"panels": chosen or assigned, "customized": True, "assigned": assigned}
+
+
+@transaction.atomic
+def save_dashboard_layout(*, actor, panels):
+    _require_synthetic_user(actor)
+    if (
+        not isinstance(panels, list) or not panels
+        or any(not isinstance(panel, str) for panel in panels) or len(set(panels)) != len(panels)
+    ):
+        raise ReportingValidationError("Choose one or more distinct report panels.")
+    for panel in panels:
+        _require_panel(actor, panel)
+    ReportDashboardLayout.objects.update_or_create(
+        user=actor, defaults={"panels": panels, "updated_at": timezone.now()},
+    )
+    return dashboard_layout(actor=actor)
+
+
+def reset_dashboard_layout(*, actor):
+    _require_synthetic_user(actor)
+    ReportDashboardLayout.objects.filter(user=actor).delete()
+    return dashboard_layout(actor=actor)
 
 
 def record_report_export(*, user, panel, file_format, report, filters, fields=None, row_count=None):

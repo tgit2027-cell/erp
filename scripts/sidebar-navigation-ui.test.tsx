@@ -100,6 +100,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
   await act(async () => root.unmount()); host.remove(); globalThis.fetch = originalFetch;
+  try { window.sessionStorage.removeItem("erp-area"); } catch { /* no storage in this test window */ }
   window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
 });
 
@@ -262,7 +263,7 @@ test("every implemented child across the five workspaces renders its own focused
     ["purchasing", "Purchasing Workbench", "Purchasing records", ".pr-tabs"],
     ["reports", "Reports", "Reports & Dashboards", ".reports-area"],
     ["finance", "Finance & Accounting", "Finance & Accounting", "#finance-status-title"],
-    ["hr", "HR & Payroll", "HR & Payroll", ".planned-panel"],
+    ["hr", "HR & Payroll", "HR & Payroll", ".staff-records"],
   ];
   await mount();
   for (const [section, _parentName, label, target] of routes) {
@@ -458,3 +459,54 @@ for (const role of ["staff", "panel-manager", "superuser"]) {
     allReadOnly();
   });
 }
+
+// Areas (Sam, 5 Nov 2026): each person sees only the sections of their areas.
+const area = (key, name, kind, sections, unit = null, comingSoon = false) => ({
+  key, name, kind, description: `TEST ONLY ${name}`, sections, coming_soon: comingSoon, unit,
+});
+const roche = area("roche-bobois", "Roche Bobois", "business", ["retail"], { id: 2, code: "RBB", name: "TEST ONLY Roche" });
+const furniture = area("furniture", "Tivoli Furniture", "business", ["retail"], { id: 1, code: "TVL", name: "TEST ONLY Tivoli" });
+const warehouse = area("warehouse", "Warehouse", "shared", ["inventory", "delivery"]);
+const smart = area("smart", "Smart", "business", [], null, true);
+const myAreas = (areas) => ({
+  areas, source: "chosen",
+  sections: ["dashboard", "chat", "my-page", ...new Set(areas.flatMap((row) => row.sections))],
+});
+
+test("someone with one area goes straight into it, in that showroom, and sees no other section", async () => {
+  profile.areas = myAreas([roche]);
+  await mount();
+  assert.deepEqual([...host.querySelectorAll(".nav-section-toggle")].map((node) => node.title), ["Retail & Sales"]);
+  assert.equal(window.location.hash, "#/retail/main");
+  assert.equal(selectedUnit, 2, "The Roche Bobois tile switches to the Roche Bobois unit");
+  assert.equal(host.querySelector(".nav-group-label").textContent, "ROCHE BOBOIS SECTIONS");
+  assert.equal(host.querySelector(".area-switch"), null, "One area: no way back to a tiles page");
+});
+
+test("after sign-in a plain page shows only my area tiles; a tile opens the ERP with that area's sections", async () => {
+  profile.areas = myAreas([furniture, smart, warehouse]);
+  await mount();
+  assert.equal(host.querySelector(".sidebar"), null, "The tiles page has no menu");
+  assert.match(host.querySelector("h1").textContent, /Welcome/);
+  const tiles = [...host.querySelectorAll(".area-tile")];
+  assert.deepEqual(tiles.map((node) => node.dataset.area), ["furniture", "smart", "warehouse"]);
+  assert.equal(tiles[1].disabled, true, "Smart is coming soon");
+  await click(tiles[2]);
+  assert.equal(window.location.hash, "#/inventory/main");
+  assert.deepEqual([...host.querySelectorAll(".nav-section-toggle")].map((node) => node.title),
+    ["Inventory & Warehouses", "Delivery & After-Sales"], "Only the Warehouse area's sections");
+  assert.equal(host.querySelector(".area-switch-name").textContent, "Warehouse");
+  await click(host.querySelector(".area-switch button"));
+  assert.ok(host.querySelector(".area-landing"), "All areas goes back to the tiles");
+  await click([...host.querySelectorAll("button")].find((node) => /full ERP/.test(node.textContent)));
+  assert.deepEqual([...host.querySelectorAll(".nav-section-toggle")].map((node) => node.title),
+    ["Retail & Sales", "Inventory & Warehouses", "Delivery & After-Sales"]);
+  assert.equal(host.querySelector("h1").textContent, "Overview");
+});
+
+test("a link to a section outside my areas opens nothing", async () => {
+  profile.areas = myAreas([roche, warehouse]);
+  window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#/finance/main`);
+  await mount();
+  assert.match(host.textContent, /unavailable or the link is not recognized/);
+});

@@ -14,6 +14,7 @@ from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+from .master_admin_testing import by_master_admin
 from .models import (
     ApprovedSellingPrice,
     BusinessUnit,
@@ -98,7 +99,7 @@ class PurchasingFixtureMixin:
         cls.customer, _ = SyntheticCounterparty.objects.get_or_create(
             party_type=SyntheticCounterparty.Type.CUSTOMER,
             code="TEST-CUST-RETAIL-01",
-            defaults={"name": "TEST ONLY synthetic retail customer"},
+            defaults={"name": "TEST ONLY synthetic retail customer", "qid": "29963400001"},
         )
         cls.supplier, _ = SyntheticCounterparty.objects.get_or_create(
             party_type=SyntheticCounterparty.Type.SUPPLIER,
@@ -749,7 +750,7 @@ class PurchasingWorkflowTests(PurchasingFixtureMixin, TestCase):
                 amount_waived=Decimal("10.00"),
                 reason="TEST ONLY not configured",
             )
-        configure_storage_exception_roles(
+        by_master_admin(configure_storage_exception_roles)(
             actor=self.admin,
             business_unit=self.unit,
             roles=[BusinessUnitRoleAssignment.Role.BU_GM],
@@ -944,7 +945,7 @@ class PurchasingWorkflowTests(PurchasingFixtureMixin, TestCase):
             )
 
         with self.assertRaises(WorkflowPermissionDenied):
-            assign_approval_role(
+            by_master_admin(assign_approval_role)(
                 actor=self.admin,
                 user=self.roche_user,
                 business_unit=self.unit,
@@ -961,7 +962,7 @@ class PurchasingWorkflowTests(PurchasingFixtureMixin, TestCase):
             action=UserActionGrant.Action.CREATE_ORDER,
         )
         grants_before = list(UserActionGrant.objects.filter(user=target).values_list("id", "action"))
-        assigned = assign_approval_role(
+        assigned = by_master_admin(assign_approval_role)(
             actor=self.admin,
             user=target,
             business_unit=self.unit,
@@ -1038,7 +1039,7 @@ class PurchasingWorkflowTests(PurchasingFixtureMixin, TestCase):
             business_unit=self.unit,
             action=UserActionGrant.Action.CREATE_ORDER,
         )
-        assign_approval_role(
+        by_master_admin(assign_approval_role)(
             actor=self.admin,
             user=user,
             business_unit=self.unit,
@@ -1974,11 +1975,13 @@ class PurchasingWorkflowTests(PurchasingFixtureMixin, TestCase):
             party_type=SyntheticCounterparty.Type.CUSTOMER,
             code="TEST-CUST-PAGE-A",
             name="TEST ONLY synthetic pagination customer A",
+            qid="29963400011",
         )
         SyntheticCounterparty.objects.create(
             party_type=SyntheticCounterparty.Type.CUSTOMER,
             code="TEST-CUST-PAGE-B",
             name="TEST ONLY synthetic pagination customer B",
+            qid="29963400012",
         )
         client.force_login(self.admin)
         counterparty_query = {"party_type": "customer"}
@@ -2031,6 +2034,16 @@ class PurchasingWorkflowTests(PurchasingFixtureMixin, TestCase):
         self.assertEqual(len(config.data["current_prices"]), 2)
         self.assertEqual(config.data["special_order_value_bands"], [])
 
+        # Setup lock (Nov 2026): staff alone may look, but only HR or the Master Admin change the calendar,
+        # and only the Master Admin gives approval roles.
+        refused = client.put(
+            f"/api/governance/purchasing/{self.unit.pk}/work-calendar/",
+            {"closed_weekdays": [4], "closed_dates": ["2026-12-25"]},
+            format="json",
+        )
+        self.assertEqual(refused.status_code, 403, refused.data)
+        self.admin.is_superuser = True
+        self.admin.save(update_fields=["is_superuser"])
         calendar_response = client.put(
             f"/api/governance/purchasing/{self.unit.pk}/work-calendar/",
             {"closed_weekdays": [4], "closed_dates": ["2026-12-25"]},
@@ -2077,7 +2090,7 @@ class PurchasingWorkflowTests(PurchasingFixtureMixin, TestCase):
 
     def test_special_order_bands_start_unconfigured_and_need_approval(self):
         self.assertFalse(SpecialOrderValueBand.objects.filter(business_unit=self.unit, is_active=True).exists())
-        draft = create_special_order_value_band(
+        draft = by_master_admin(create_special_order_value_band)(
             actor=self.admin,
             business_unit=self.unit,
             minimum_value=Decimal("1000.00"),

@@ -1,4 +1,9 @@
-"""Non-posting synthetic return requests; never financial/stock documents."""
+"""Synthetic customer return requests.
+
+Intake and inspection post nothing. Finance then approves the refund, which
+issues a customer credit note and posts stock and journal entries
+(return_refunds.py), or rejects it with a reason.
+"""
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -51,7 +56,10 @@ class SalesReturnIntake(models.Model):
         constraints = [
             models.CheckConstraint(condition=Q(is_synthetic=True), name="return_intake_demo_only"),
             models.CheckConstraint(condition=Q(proposed_refund_amount__gte=0), name="return_proposed_refund_nonnegative"),
-            models.CheckConstraint(condition=Q(status__in=["awaiting_inspection", "finance_pending"]), name="return_status_nonposting"),
+            models.CheckConstraint(
+                condition=Q(status__in=["awaiting_inspection", "finance_pending", "refunded", "rejected"]),
+                name="return_status_allowed",
+            ),
             models.CheckConstraint(condition=Q(receiving_mode__in=["showroom", "warehouse_collection"]), name="return_receiving_mode_allowed"),
             models.CheckConstraint(condition=Q(original_payment_method__in=["cash", "card"]), name="return_original_method_allowed"),
             models.CheckConstraint(condition=Q(requested_refund_method__in=["cash", "card"]), name="return_requested_method_allowed"),
@@ -71,7 +79,10 @@ class SalesReturnEvent(models.Model):
         ordering = ["occurred_at", "pk"]
         constraints = [
             models.CheckConstraint(condition=Q(is_synthetic=True), name="return_event_demo_only"),
-            models.CheckConstraint(condition=Q(kind__in=["intake_recorded", "inspection_recorded"]), name="return_event_kind_allowed"),
+            models.CheckConstraint(
+                condition=Q(kind__in=["intake_recorded", "inspection_recorded", "refund_approved", "refund_rejected"]),
+                name="return_event_kind_allowed",
+            ),
         ]
 
     def save(self, *args, **kwargs):

@@ -220,7 +220,9 @@ async function editPaletteAndReturnToInventory() {
   assert.equal(container.querySelector('select[aria-label="Business unit"]').value, "1");
   assert.ok(container.querySelector(".page-heading").textContent.includes("TEST ONLY Unit A"));
   assert.equal(document.documentElement.dataset.unitTheme, "custom");
-  assert.equal(document.documentElement.style.getPropertyValue("--brand"), "#B24F00");
+  // Warehouse pages wear the warehouse area's yellow, whatever the unit's own palette (Sam, 6 Nov 2026).
+  assert.equal(document.documentElement.dataset.areaTheme, "warehouse");
+  assert.equal(document.documentElement.style.getPropertyValue("--brand"), "");
 }
 
 beforeEach(async () => {
@@ -558,7 +560,9 @@ test("same-BU refreshed stock 403 stays visible and cannot be undone by an old r
   assertLoading(false);
   assert.equal(container.querySelector('select[aria-label="Business unit"]').value, "1");
   assert.equal(document.documentElement.dataset.unitTheme, "custom");
-  assert.equal(document.documentElement.style.getPropertyValue("--brand"), "#B24F00");
+  // Warehouse pages wear the warehouse area's yellow, whatever the unit's own palette (Sam, 6 Nov 2026).
+  assert.equal(document.documentElement.dataset.areaTheme, "warehouse");
+  assert.equal(document.documentElement.style.getPropertyValue("--brand"), "");
 });
 
 test("successful same-BU refresh removes a resolved stock error and restores the fresh page", async () => {

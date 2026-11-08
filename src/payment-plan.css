@@ -1,0 +1,42 @@
+/* Payment plan: weekly and monthly payments by bank and currency, within each bank's daily limit */
+.payment-plan .bc-filters input[type="number"] { width: 110px; min-height: 35px; padding: 6px 8px; border: 1px solid var(--line); background: white; font: inherit; font-size: 12px; }
+.pp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pp-chip { display: inline-block; padding: 2px 8px; border: 1px solid var(--line); background: #fcfcfb; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pp-chip b { margin-right: 2px; }
+.pp-periods { table-layout: fixed; }
+.pp-periods thead th:nth-child(1) { width: 32%; }
+.pp-periods thead th:nth-child(3) { width: 90px; }
+.pp-periods thead th:nth-child(4) { width: 150px; }
+.pp-periods th[scope="row"] small { white-space: normal; }
+.pp-warning { display: grid; gap: 6px; padding: 10px 12px; border-left: 3px solid #9b392f; background: #fbecea; color: #5d221c; font-size: 12px; }
+.pp-warning ul { margin: 0; padding-left: 18px; }
+.pp-warning p { margin: 0; }
+.pp-detail { gap: 14px; }
+.pp-group { display: grid; gap: 6px; }
+.pp-group-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.pp-group-head h4 { margin: 0; font-size: 13px; }
+.pp-group-head strong { margin-left: auto; font-size: 13px; }
+.pp-table { table-layout: fixed; background: white; }
+.pp-table thead th:nth-child(1) { width: 130px; }
+.pp-table thead th:nth-child(4) { width: 150px; }
+.pp-table thead th:nth-child(5) { width: 120px; }
+.pp-table td small, .pp-table th[scope="row"] small { display: block; white-space: normal; }
+.pp-send { display: block; font-weight: 600; }
+.pp-flag { display: inline-block; margin: 3px 0 0 6px; padding: 1px 6px; border: 1px solid #b07a1f; color: #7a520f; font-size: 10px; font-weight: 700; }
+.pp-flag-late { border-color: #9b392f; color: #9b392f; }
+.pp-days { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); background: white; }
+.pp-days h4 { margin: 0; font-size: 12px; color: var(--muted); }
+.pp-day-row { display: grid; grid-template-columns: 110px repeat(5, minmax(0, 1fr)); gap: 8px; align-items: center; font-size: 11px; }
+.pp-day-bank { font-weight: 700; }
+.pp-day { display: grid; gap: 2px; }
+.pp-meter { display: block; height: 8px; background: #ecebe7; }
+.pp-meter span { display: block; height: 100%; background: #2a78d6; }
+.pp-meter .pp-full { background: #b07a1f; }
+.pp-limit input { width: 160px; min-height: 32px; padding: 4px 8px; border: 1px solid var(--line); background: white; font: inherit; font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+.pp-limits { min-width: 0; max-width: 560px; }
+.pp-limits thead th:nth-child(3) { width: 90px; }
+@media (max-width: 760px) {
+  .pp-periods { min-width: 0; }
+  .pp-periods thead th:nth-child(2), .pp-periods td:nth-child(2) { display: none; }
+  .pp-day-row { grid-template-columns: 1fr; }
+}

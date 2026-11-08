@@ -10,7 +10,7 @@ from .purchasing_services import WorkflowPermissionDenied
 from .stock_transfer_requests import submit_transfer_request
 from .test_stock_transfer_requests import TransferRequestFixtureMixin
 from .transaction_services import InvalidTransaction
-from .transfer_permissions import set_transfer_permission, transfer_permission_overview
+from .transfer_permissions import PERMISSION_ACTIONS, set_transfer_permission, transfer_permission_overview
 
 
 Action = UserActionGrant.Action
@@ -65,6 +65,13 @@ class TransferPermissionTests(TransferRequestFixtureMixin, TestCase):
         with self.assertRaises(ValidationError):
             event.save()
 
+    def test_every_permission_on_the_screen_can_be_granted_and_revoked_with_an_audit_record(self):
+        for action in PERMISSION_ACTIONS:
+            with self.subTest(action=action):
+                self.assertTrue(self.set(True, action)["changed"])
+                self.assertTrue(self.set(False, action)["changed"])
+        self.assertEqual(TransferPermissionAudit.objects.count(), 2 * len(PERMISSION_ACTIONS))
+
     def test_only_a_system_administrator_may_change_permissions(self):
         for actor in (self.manager, self.admin):
             with self.assertRaises(WorkflowPermissionDenied):
@@ -76,7 +83,7 @@ class TransferPermissionTests(TransferRequestFixtureMixin, TestCase):
 
     def test_only_transfer_permissions_and_demo_accounts_can_be_set(self):
         with self.assertRaises(InvalidTransaction):
-            self.set(True, action=Action.CREATE_ORDER)
+            self.set(True, action="fly_to_the_moon")
         with self.assertRaises(InvalidTransaction):
             self.set(True, user=self.sysadmin)
 

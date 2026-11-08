@@ -28,11 +28,11 @@ INSTALLED_APPS = [
     "rest_framework",
     "foundation",
     "audit",
+    "chat",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -60,27 +60,15 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-database_url = os.environ.get("DATABASE_URL")
-if database_url:
-    try:
-        parsed_database_url = urlparse(database_url)
-        database_hostname = parsed_database_url.hostname
-    except (ValueError, UnicodeError):
-        raise RuntimeError(
-            "DATABASE_URL is malformed. In Render, copy the database's Internal Database URL into DATABASE_URL "
-            "as-is. Do not split it across DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, or DB_PORT."
-        ) from None
-    if parsed_database_url.scheme not in {"postgres", "postgresql"} or not database_hostname:
-        raise RuntimeError(
-            "DATABASE_URL must be Render's PostgreSQL Internal Database URL. "
-            "Do not put the URL in DB_HOST; remove DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, and DB_PORT overrides."
-        )
-    if len(database_hostname) > 253 or any(len(label) > 63 for label in database_hostname.split(".")):
-        raise RuntimeError(
-            "DATABASE_URL has an invalid host (over 253 characters). In Render, set it from the database's "
-            "Internal Database URL; remove any manually copied value from DB_HOST."
-        )
-    database_options = parse_qs(parsed_database_url.query)
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    parsed_database_url = urlparse(DATABASE_URL)
+    if parsed_database_url.scheme not in {"postgres", "postgresql"}:
+        raise RuntimeError("DATABASE_URL must use the postgres:// or postgresql:// scheme.")
+    database_options = {
+        key: values[-1]
+        for key, values in parse_qs(parsed_database_url.query).items()
+    }
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -88,25 +76,19 @@ if database_url:
             "USER": unquote(parsed_database_url.username or ""),
             "PASSWORD": unquote(parsed_database_url.password or ""),
             "HOST": parsed_database_url.hostname or "",
-            "PORT": str(parsed_database_url.port or 5432),
-            "CONN_MAX_AGE": 60,
-            "OPTIONS": {"sslmode": database_options.get("sslmode", ["require"])[0]},
+            "PORT": str(parsed_database_url.port or "5432"),
+            "OPTIONS": database_options,
+            "CONN_MAX_AGE": 0,
         }
     }
 else:
-    db_host = os.environ.get("DB_HOST", "127.0.0.1")
-    if "://" in db_host or len(db_host) > 253:
-        raise RuntimeError(
-            "DB_HOST must contain only a PostgreSQL hostname, not a connection URL. "
-            "For Render managed Postgres, set DATABASE_URL to the Internal Database URL and remove DB_HOST."
-        )
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": os.environ.get("DB_NAME", "tivoli_erp_demo"),
             "USER": os.environ.get("DB_USER", os.environ.get("USER", "postgres")),
             "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-            "HOST": db_host,
+            "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
             "PORT": os.environ.get("DB_PORT", "55432"),
             "CONN_MAX_AGE": 0,
         }
@@ -126,13 +108,7 @@ LANGUAGE_CODE = "en"
 TIME_ZONE = "Asia/Qatar"
 USE_I18N = True
 USE_TZ = True
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "dist"] if (BASE_DIR / "dist").is_dir() else []
-STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
-}
+STATIC_URL = "static/"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT") or (BASE_DIR / "media")).resolve()
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -162,18 +138,6 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
-render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
-if render_hostname:
-    ALLOWED_HOSTS = list(dict.fromkeys([*ALLOWED_HOSTS, render_hostname]))
-    CSRF_TRUSTED_ORIGINS = list(dict.fromkeys([*CSRF_TRUSTED_ORIGINS, f"https://{render_hostname}"]))
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-if os.environ.get("RENDER") and not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SECURE_REDIRECT_EXEMPT = [r"^healthz/$"]
-    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_REFERRER_POLICY = "same-origin"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
@@ -188,3 +152,18 @@ REST_FRAMEWORK = {
         "foundation.renderers.LoadMeasuredJSONRenderer",
     ],
 }
+
+# Email alerts (approvals waiting, documents about to expire). Without SMTP settings, emails are
+# written to the server log instead of being sent.
+EMAIL_BACKEND = os.environ.get("ERP_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = os.environ.get("ERP_EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("ERP_EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("ERP_EMAIL_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("ERP_EMAIL_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("ERP_EMAIL_TLS", "true").lower() == "true"
+DEFAULT_FROM_EMAIL = os.environ.get("ERP_EMAIL_FROM", "Tivoli ERP <erp-alerts@example.invalid>")
+ERP_BASE_URL = os.environ.get("ERP_BASE_URL", "http://localhost:5173").rstrip("/")
+
+# The HR Portal for all staff (Nov 2026) is switched on: the owner said go for the live test (6 Nov 2026).
+# Set ERP_HR_PORTAL=off to hide it again; while it is off the menu hides it and every portal address answers "not found".
+HR_PORTAL_ENABLED = os.environ.get("ERP_HR_PORTAL", "on").strip().lower() == "on"

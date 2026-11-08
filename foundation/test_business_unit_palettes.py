@@ -34,6 +34,7 @@ class BusinessUnitPaletteTests(TestCase):
             username="synthetic_palette_admin",
             password=get_random_string(32),
             is_staff=True,
+            is_superuser=True,  # Setup lock (Nov 2026): only the Master Admin changes palettes.
         )
         cls.ordinary_user = User.objects.get(username="demo_roche")
         UserActionGrant.objects.create(
@@ -80,8 +81,8 @@ class BusinessUnitPaletteTests(TestCase):
             dict(BusinessUnit.Palette.choices),
             {
                 "tivoli": "Tivoli orange",
-                "roche": "Roche Bobois light blue",
-                "natuzzi": "Natuzzi light brown",
+                "roche": "Roche Bobois blue",
+                "natuzzi": "Natuzzi green",
                 "slate": "Slate",
             },
         )
@@ -131,7 +132,7 @@ class BusinessUnitPaletteTests(TestCase):
             ),
             grants_before,
         )
-        organization = client.get("/api/organization/")
+        organization = client.get("/api/organization/", {"unit": self.tivoli.id})
         self.assertEqual(organization.data["selected_unit"]["theme_palette"], BusinessUnit.Palette.SLATE)
 
     def test_palette_update_requires_csrf_and_rejects_invalid_values(self):
@@ -355,6 +356,21 @@ class BusinessUnitPaletteTests(TestCase):
             anonymous.get("/api/governance/business-unit-palettes/").status_code,
             (401, 403),
         )
+
+    def test_staff_who_are_not_the_master_admin_can_look_but_not_change(self):
+        staff = get_user_model().objects.create_user(username="synthetic_palette_staff", password=get_random_string(32),
+                                                     is_staff=True)
+        client, csrf_token = self.session_client_for(staff)
+        self.assertEqual(client.get("/api/governance/business-unit-palettes/").status_code, 200)
+        response = client.patch(
+            f"/api/governance/business-unit-palettes/{self.roche.id}/",
+            {"theme_palette": BusinessUnit.Palette.TIVOLI},
+            format="json",
+            HTTP_X_CSRFTOKEN=csrf_token,
+        )
+        self.assertEqual(response.status_code, 403)
+        self.roche.refresh_from_db()
+        self.assertEqual(self.roche.theme_palette, BusinessUnit.Palette.ROCHE)
 
     def test_current_user_reports_staff_flag_for_ui_gating(self):
         admin_client = APIClient()

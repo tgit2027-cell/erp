@@ -391,7 +391,8 @@ class ApprovalRoleAssignmentDetailView(APIView):
 
 
 class WorkCalendarConfigurationView(APIView):
-    permission_classes = [IsAdminUser]
+    # HR or the Master Admin; the service checks which (setup lock, Nov 2026).
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, unit_id):
         data = _payload(request)
@@ -484,6 +485,7 @@ class SyntheticCounterpartyView(APIView):
                 party_type=data.get("party_type"),
                 code=data.get("code"),
                 name=data.get("name"),
+                qid=data.get("qid"),
             ),
             status=status.HTTP_201_CREATED,
         )

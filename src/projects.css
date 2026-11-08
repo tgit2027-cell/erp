@@ -1,0 +1,37 @@
+/* Projects & Fit-Out (Phase 2). Builds on the supplier-payments / factory page styles. */
+.projects-page .prj-price dd { font-variant-numeric: tabular-nums; }
+.projects-page .prj-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-start; margin-bottom: 12px; }
+.projects-page .prj-head h3 { margin: 0; font-size: 18px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.projects-page .prj-head > div { flex: 1 1 320px; min-width: 0; }
+.projects-page .prj-head > .prj-switch { flex: 0 1 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.projects-page .prj-switch label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted, #667085); }
+.projects-page .prj-switch select { max-width: 280px; font-size: 14px; padding: 6px 8px; }
+.projects-page .prj-tabs { flex-wrap: wrap; margin-top: 16px; }
+.projects-page .an-tab-on { border-bottom-color: var(--brand); }
+.projects-page .an-count { background: var(--brand-soft); color: var(--brand-deep); }
+.projects-page .prj-kind { display: inline-block; min-width: 86px; margin-right: 6px; padding: 1px 8px; border-radius: 10px; background: var(--brand-soft); color: var(--brand-deep); font-size: 11px; font-weight: 700; text-align: center; }
+.projects-page .prj-bar { display: block; height: 6px; margin-bottom: 4px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.projects-page .prj-bar > span { display: block; height: 100%; background: var(--brand); }
+.projects-page .prj-kv { min-width: 0; max-width: 760px; }
+.projects-page .prj-kv th { width: 45%; }
+.projects-page .prj-pick { display: grid; gap: 4px; }
+.projects-page .prj-pick small { display: inline; margin-left: 6px; color: var(--muted); }
+.projects-page .prj-schedule td, .projects-page .prj-schedule th { padding: 6px 8px; white-space: nowrap; }
+.projects-page .prj-step { display: inline-block; min-width: 54px; padding: 2px 6px; border-radius: 4px; background: var(--sand); color: var(--muted); font-size: 11px; text-align: center; font-variant-numeric: tabular-nums; }
+.projects-page .prj-step.is-planned { background: #e8eef6; color: #2d4a6b; }
+.projects-page .prj-step.is-done { background: #e3f1e7; color: #2f6b45; font-weight: 600; }
+.projects-page .prj-step.is-late { background: #fbe4e1; color: #9b392f; font-weight: 600; }
+.projects-page .prj-step.is-skip { opacity: .5; }
+.projects-page .prj-late-row > th { box-shadow: inset 3px 0 0 #9b392f; }
+.projects-page .prj-pct { width: 64px; min-height: 28px; padding: 2px 6px; border: 1px solid var(--line); font: inherit; font-size: 12px; text-align: right; }
+.projects-page .prj-cash .prj-flow { display: block; height: 6px; margin: 2px 0; background: transparent; }
+.projects-page .prj-cash .prj-in { display: block; height: 100%; background: #2f6b45; border-radius: 3px; }
+.projects-page .prj-cash .prj-out { display: block; height: 100%; background: var(--brand); border-radius: 3px; }
+.projects-page .prj-cash td:nth-child(4) { min-width: 220px; white-space: normal; }
+.projects-page .prj-now > * { background: var(--brand-soft); }
+.projects-page .prj-past > * { color: var(--muted); }
+.projects-page .prj-group { margin-top: 18px; }
+.projects-page .prj-group h3 { display: flex; gap: 10px; align-items: center; margin: 0 0 8px; font-size: 14px; }
+.projects-page .prj-group h3 small { color: var(--muted); font-weight: 400; }
+.projects-page .prj-tenders { min-width: 1180px; }
+.projects-page .fac-alert-line { margin: 0 0 10px; color: #9b392f; font-size: 13px; }

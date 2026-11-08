@@ -1,4 +1,4 @@
-"""Small standard-library Office Open XML writers for controlled report exports."""
+"""Small standard-library writers (Office Open XML and PDF) for controlled report exports."""
 
 from io import BytesIO
 from decimal import Decimal, InvalidOperation
@@ -60,8 +60,8 @@ def report_export_manifest(report):
     return list(dict.fromkeys(manifest)), row_count
 
 
-def _xlsx(report):
-    numeric_fields = {
+def _xlsx(report, extra_numeric=()):
+    numeric_fields = set(extra_numeric) | {
         "selling_price",
         "quantity",
         "sales_amount",
@@ -239,9 +239,154 @@ def _docx(report):
     return buffer.getvalue()
 
 
+# PDF: A4 landscape, the built-in Helvetica fonts, one table after another,
+# repeating column headers on each new page and numbering the pages.
+PDF_WIDTH, PDF_HEIGHT, PDF_MARGIN = 842, 595, 36
+PDF_FONT_SIZE, PDF_ROW = 7.5, 12
+
+
+def _pdf_text(value):
+    """Latin-1 text for the built-in fonts; characters they cannot draw become '?'."""
+    text = "" if value is None else str(value)
+    text = text.replace("\u2014", "-").replace("\u2013", "-").replace("\u2019", "'").replace("\u00b7", "-")
+    return text.encode("latin-1", "replace").decode("latin-1")
+
+
+def _pdf_escape(text):
+    return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+
+def _pdf_fit(text, width, size):
+    # Helvetica averages about half the font size per character.
+    limit = max(int(width / (size * 0.5)), 1)
+    return text if len(text) <= limit else text[: max(limit - 1, 1)] + "~"
+
+
+def _pdf_pages(report):
+    pages, ops = [], []
+    y = 0
+
+    def text(x, y, value, size=PDF_FONT_SIZE, bold=False, right_edge=None):
+        value = _pdf_escape(_pdf_text(value))
+        if right_edge is not None:
+            x = right_edge - len(value) * size * 0.5
+        ops.append(f"BT /{'F2' if bold else 'F1'} {size} Tf {x:.1f} {y:.1f} Td ({value}) Tj ET")
+
+    def new_page():
+        nonlocal ops, y
+        ops = []
+        pages.append(ops)
+        text(PDF_MARGIN, PDF_HEIGHT - PDF_MARGIN, report["title"], size=13, bold=True)
+        text(PDF_MARGIN, PDF_HEIGHT - PDF_MARGIN - 14, report["policy_label"], size=7)
+        y = PDF_HEIGHT - PDF_MARGIN - 34
+
+    def line(y):
+        ops.append(f"0.75 w {PDF_MARGIN} {y:.1f} m {PDF_WIDTH - PDF_MARGIN} {y:.1f} l S")
+
+    new_page()
+    if report.get("note"):
+        text(PDF_MARGIN, y, report["note"], size=8)
+        y -= 18
+    usable = PDF_WIDTH - 2 * PDF_MARGIN
+    for title, _key, fields, rows in report_export_tables(report):
+        if not fields:
+            continue
+        width = usable / len(fields)
+        numeric = {field for field in fields if rows and all(_is_number(row.get(field)) for row in rows if row.get(field) not in (None, ""))}
+
+        def header():
+            nonlocal y
+            for index, field in enumerate(fields):
+                x = PDF_MARGIN + index * width
+                label = _pdf_fit(_pdf_text(field).replace("_", " "), width - 4, PDF_FONT_SIZE)
+                text(x + 2, y, label, bold=True, right_edge=(x + width - 2) if field in numeric else None)
+            line(y - 3)
+            y -= PDF_ROW
+
+        if y < PDF_MARGIN + 4 * PDF_ROW:
+            new_page()
+        text(PDF_MARGIN, y, title, size=10, bold=True)
+        y -= PDF_ROW + 2
+        header()
+        for row in rows:
+            if y < PDF_MARGIN + PDF_ROW:
+                new_page()
+                text(PDF_MARGIN, y, f"{title} (continued)", size=10, bold=True)
+                y -= PDF_ROW + 2
+                header()
+            for index, field in enumerate(fields):
+                x = PDF_MARGIN + index * width
+                value = _pdf_fit(_pdf_text(row.get(field, "")), width - 4, PDF_FONT_SIZE)
+                text(x + 2, y, value, right_edge=(x + width - 2) if field in numeric else None)
+            y -= PDF_ROW
+        y -= PDF_ROW
+    for number, page in enumerate(pages, start=1):
+        label = _pdf_escape(f"Page {number} of {len(pages)}")
+        page.append(f"BT /F1 7 Tf {PDF_WIDTH - PDF_MARGIN - 50:.1f} {PDF_MARGIN - 18:.1f} Td ({label}) Tj ET")
+    return pages
+
+
+def _is_number(value):
+    if isinstance(value, (int, float, Decimal)) and not isinstance(value, bool):
+        return True
+    try:
+        Decimal(str(value))
+        return True
+    except (InvalidOperation, ValueError):
+        return False
+
+
+def _pdf(report):
+    pages = _pdf_pages(report)
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        None,  # the page tree, filled in once the page numbers are known
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
+    ]
+    kids = []
+    for ops in pages:
+        stream = "\n".join(ops).encode("latin-1")
+        objects.append(b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"\nendstream")
+        objects.append(
+            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {PDF_WIDTH} {PDF_HEIGHT}] "
+            f"/Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {len(objects)} 0 R >>".encode()
+        )
+        kids.append(f"{len(objects)} 0 R")
+    objects[1] = f"<< /Type /Pages /Kids [{' '.join(kids)}] /Count {len(kids)} >>".encode()
+    title = _pdf_escape(_pdf_text(report["title"]))
+    objects.append(f"<< /Title ({title}) /Producer (Tivoli ERP synthetic export) >>".encode("latin-1"))
+    out = BytesIO()
+    out.write(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
+    offsets = []
+    for number, body in enumerate(objects, start=1):
+        offsets.append(out.tell())
+        out.write(f"{number} 0 obj\n".encode() + body + b"\nendobj\n")
+    xref = out.tell()
+    out.write(f"xref\n0 {len(objects) + 1}\n0000000000 65535 f \n".encode())
+    for offset in offsets:
+        out.write(f"{offset:010d} 00000 n \n".encode())
+    out.write(f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R /Info {len(objects)} 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode())
+    return out.getvalue()
+
+
+def render_table_xlsx(*, title, note, policy_label, fields, rows, numeric, summary=None):
+    """One-sheet workbook for screens outside the report builder (for example the general ledger).
+
+    fields are the column headers in order; rows are dicts keyed by those headers;
+    numeric names the headers whose values are written as numbers.
+    """
+    report = {"title": title, "note": note, "policy_label": policy_label, "fields": fields, "rows": rows}
+    if summary:
+        report["summary"] = summary
+    return _xlsx(report, extra_numeric=numeric)
+
+
 def render_report_export(report, file_format):
     if file_format == "xlsx":
         return _xlsx(report)
     if file_format == "docx":
         return _docx(report)
-    raise ReportingValidationError("Export format must be xlsx or docx.")
+    if file_format == "pdf":
+        return _pdf(report)
+    raise ReportingValidationError("Export format must be xlsx, docx or pdf.")

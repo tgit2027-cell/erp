@@ -8,13 +8,19 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from audit.models import AuditEvent
 from audit.recording import record as audit_record
 
+from .access_levels import can_manage_users
+from .areas import my_areas
+from .factory import visibility as factory_visibility
+from .projects import visibility as project_visibility
+from .go_live_imports import can_use as can_import
+from .portal import is_enabled as hr_portal_enabled, is_portal_member
 from .access import (
     stock_page_queryset,
     active_grants,
@@ -136,6 +142,8 @@ class LoginView(APIView):
                 (settings.APP_ENV == "demo" and user.is_superuser)
                 or active_grants(user).exists()
                 or (settings.APP_ENV == "demo" and has_capacity_workspace_access(user))
+                # Staff with only a portal sign-in (Sam, 5 Nov 2026), while the HR Portal is switched on.
+                or (hr_portal_enabled() and is_portal_member(user))
             )
         ):
             if user is not None:
@@ -154,6 +162,12 @@ class LoginView(APIView):
                 "is_staff": user.is_staff,
                 "is_superuser": user.is_superuser,
                 "can_manage_report_panels": can_manage_report_panels(user),
+                "can_manage_users": can_manage_users(user),
+                "can_import": can_import(user),
+                "areas": my_areas(user),
+                **factory_visibility(user),
+                **project_visibility(user),
+                "hr_portal_enabled": hr_portal_enabled(),
             }
         )
 
@@ -177,6 +191,12 @@ class CurrentUserView(APIView):
                 "is_staff": request.user.is_staff,
                 "is_superuser": request.user.is_superuser,
                 "can_manage_report_panels": can_manage_report_panels(request.user),
+                "can_manage_users": can_manage_users(request.user),
+                "can_import": can_import(request.user),
+                "areas": my_areas(request.user),
+                **factory_visibility(request.user),
+                **project_visibility(request.user),
+                "hr_portal_enabled": hr_portal_enabled(),
             }
         )
 
@@ -223,8 +243,19 @@ class OrganizationView(APIView):
         )
 
 
+class StaffReadsMasterAdminChanges(IsAdminUser):
+    """Staff may look; only the Master Admin changes the setup (Sam, 5 Nov 2026)."""
+
+    message = "Only the Master Admin can change the ERP's setup."
+
+    def has_permission(self, request, view):
+        if not super().has_permission(request, view):
+            return False
+        return request.method in SAFE_METHODS or bool(request.user.is_superuser)
+
+
 class BusinessUnitPaletteListView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [StaffReadsMasterAdminChanges]
 
     def get(self, request):
         palettes = [
@@ -259,7 +290,7 @@ class BusinessUnitPaletteListView(APIView):
 
 
 class CustomBusinessUnitPaletteDetailView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [StaffReadsMasterAdminChanges]
 
     def patch(self, request, palette_id):
         with transaction.atomic():
@@ -278,7 +309,7 @@ class CustomBusinessUnitPaletteDetailView(APIView):
 
 
 class BusinessUnitPaletteDetailView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [StaffReadsMasterAdminChanges]
 
     def patch(self, request, unit_id):
         payload = request.data
@@ -400,6 +431,8 @@ class FavoriteDestinationsView(APIView):
                 is_staff=request.user.is_staff,
                 is_superuser=request.user.is_superuser,
                 manages_panels=manages_panels,
+                manages_users=can_manage_users(request.user),
+                imports=can_import(request.user),
                 reads_stock=can_read_stock,
             )
         ]

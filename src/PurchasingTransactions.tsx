@@ -25,10 +25,11 @@ type QuotationChoices = {
     stock: Array<{ location_id: number; quantity: string }> | null;
   }>;
   current_price_count?: number;
-  customers: Array<{ counterparty_id: number; code: string; display_name: string; party_type: "customer"; contact_en: string; contact_ar: string; name_ar: string }>;
+  customers: Array<{ counterparty_id: number; code: string; client_number?: string | null; project_number?: string | null; title_label?: string; qid?: string | null; qid_declined?: boolean; display_name: string; party_type: "customer"; contact_en: string; contact_ar: string; name_ar: string }>;
   customer_count?: number;
   role_assignments: Array<{ id: number; user_id: number; username: string; role: string }>;
   discount_ceiling: string;
+  stock_discount_ceiling?: string | null;
   work_calendar: { is_configured: boolean; closed_weekdays: number[]; closed_dates: string[] };
   test_only_label: string;
 };
@@ -654,7 +655,9 @@ export default function PurchasingTransactions({
     if (!response.ok) throw new ApiProblem(errorMessage(body, response.status), response.status);
     return body as unknown as { rows: QuotePriceRow[]; more: boolean };
   }, [selectedUnitId]);
-  const rawQuoteDiscountCeiling = Number(currentQuotation?.discount_ceiling ?? 0);
+  // An admin may give a person their own discount for stock sales; special orders keep the role ceiling.
+  const ownStockDiscount = quoteKind === "stock" && currentQuotation?.stock_discount_ceiling != null;
+  const rawQuoteDiscountCeiling = Number((ownStockDiscount ? currentQuotation?.stock_discount_ceiling : currentQuotation?.discount_ceiling) ?? 0);
   const quoteDiscountCeiling = Number.isFinite(rawQuoteDiscountCeiling)
     ? Math.max(0, rawQuoteDiscountCeiling) : 0;
   const quoteRequestCeiling = isStaff ? 50 : quoteDiscountCeiling;
@@ -1021,7 +1024,7 @@ export default function PurchasingTransactions({
     if (!Number.isFinite(requestedDiscount) || requestedDiscount < 0 || requestedDiscount > quoteRequestCeiling) {
       setQuoteFormError(isStaff
         ? "Staff may request discounts up to 50%. Discounts above the salesperson's own ceiling enter the existing pending-manager-approval workflow."
-        : `Discount must be between 0% and your role ceiling of ${quoteDiscountCeiling}%. The server makes the final decision.`);
+        : `Discount must be between 0% and your ${ownStockDiscount ? "own discount for stock sales" : "role ceiling"} of ${quoteDiscountCeiling}%. The server makes the final decision.`);
       return;
     }
     const quoteLines: QuoteLineInput[] = [
@@ -1538,7 +1541,7 @@ export default function PurchasingTransactions({
             <select id="pw-quote-kind" value={quoteKind} onChange={(event) => setQuoteKind(event.target.value as "stock" | "special_order")} disabled={!availability.quote.enabled || quoteDraftIsStale}>
               <option value="stock">Available stock</option><option value="special_order">Special order</option>
             </select>
-            <label htmlFor="pw-quote-customer-search">Find customer (code or name)</label>
+            <label htmlFor="pw-quote-customer-search">Find customer (client or project number, QID, name or phone)</label>
             <input id="pw-quote-customer-search" type="search" maxLength={80} value={customerSearch} placeholder="Type at least 2 characters"
               onChange={(event) => setCustomerSearch(event.target.value)} disabled={!availability.quote.enabled || quoteDraftIsStale} />
             <small className="pw-item-search-status" aria-live="polite">{customerResults && customerResults.term === customerSearch.trim()
@@ -1553,11 +1556,14 @@ export default function PurchasingTransactions({
               }));
               setQuoteCustomer(event.target.value);
             }} required disabled={!availability.quote.enabled || quoteDraftIsStale}>
-              <option value="">Select a configured customer</option>{customers.map((party) => <option key={party.counterparty_id} value={party.counterparty_id}>{party.code} · {party.display_name}</option>)}
+              <option value="">Select a configured customer</option>{customers.map((party) => <option key={party.counterparty_id} value={party.counterparty_id}>{[party.client_number, party.project_number].filter(Boolean).join(" / ") || party.code}{party.qid ? ` · QID ${party.qid}` : ""} · {party.title_label ? `${party.title_label} ` : ""}{party.display_name}</option>)}
             </select>
             {selectedQuoteCustomer && (
               <div className="pw-quote-customer-preview" aria-live="polite">
                 <strong>Client: {selectedQuoteCustomer.display_name}</strong>
+                {selectedQuoteCustomer.client_number && <span>Client no.: <b>{selectedQuoteCustomer.client_number}</b></span>}
+                {selectedQuoteCustomer.project_number && <span>Project no.: <b>{selectedQuoteCustomer.project_number}</b></span>}
+                <span>QID: <b>{selectedQuoteCustomer.qid ?? "not given (customer declined)"}</b></span>
                 <span>Contact: {selectedQuoteCustomer.contact_en || "English contact not supplied"}</span>
                 <span>Arabic name: {selectedQuoteCustomer.name_ar
                   ? <b lang="ar" dir="rtl">{selectedQuoteCustomer.name_ar}</b>
@@ -1610,8 +1616,8 @@ export default function PurchasingTransactions({
             <div className="pw-form-grid">
               <label htmlFor="pw-quote-discount">Discount (%)<input id="pw-quote-discount" type="number" min="0" max={quoteRequestCeiling} step="0.01" inputMode="decimal" required value={discountPercent} onChange={(event) => setDiscountPercent(event.target.value)} disabled={!availability.quote.enabled || quoteDraftIsStale} aria-describedby="pw-quote-discount-ceiling" /></label>
               <small id="pw-quote-discount-ceiling">{isStaff
-                ? `Your assigned role ceiling is ${quoteDiscountCeiling}%; staff may request up to 50%. Above your own ceiling remains subject to pending manager approval.`
-                : `Your current role ceiling: ${quoteDiscountCeiling}% · enforced again by the server.`}</small>
+                ? `Your ${ownStockDiscount ? "own discount for stock sales" : "assigned role ceiling"} is ${quoteDiscountCeiling}%; staff may request up to 50%. Above your own ceiling remains subject to pending manager approval.`
+                : `Your current ${ownStockDiscount ? "discount for stock sales" : "role ceiling"}: ${quoteDiscountCeiling}% · enforced again by the server.`}</small>
             </div>
             <section className="pw-quote-line-review" aria-label="Quote line review">
               <h4>Review each line</h4>
@@ -1636,7 +1642,7 @@ export default function PurchasingTransactions({
               </p>
               <p className="pw-action-note">Indicative estimate only, calculated from the current approved price snapshots and the quote-level discount. The server price snapshot and returned quote are authoritative.</p>
             </section>
-            {retailMode && <p className="pw-action-note">Your current role discount ceiling is {quoteDiscountCeiling}%. The server remains authoritative for the final price decision.</p>}
+            {retailMode && <p className="pw-action-note">{ownStockDiscount ? "Your own discount for stock sales" : "Your current role discount ceiling"} is {quoteDiscountCeiling}%. The server remains authoritative for the final price decision.</p>}
             <label>Discount decision reason<input required maxLength={240} value={discountReason} onChange={(event) => setDiscountReason(event.target.value)} disabled={!availability.quote.enabled || quoteDraftIsStale} /></label>
             {quoteKind === "special_order" && (
               <>

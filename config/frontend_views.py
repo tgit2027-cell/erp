@@ -9,5 +9,9 @@ from django.views.decorators.http import require_GET
 def app_index(_request):
     index_path = settings.BASE_DIR / "dist" / "index.html"
     if not index_path.is_file():
-        return HttpResponse("Frontend build is unavailable.", status=503, content_type="text/plain")
+        return HttpResponse(
+            "Frontend bundle is missing. Check Render's build command; it must run `bash build.sh`.",
+            status=503,
+            content_type="text/plain",
+        )
     return HttpResponse(index_path.read_text(encoding="utf-8"), content_type="text/html; charset=utf-8")

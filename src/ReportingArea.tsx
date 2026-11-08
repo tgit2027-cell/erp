@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import {
+  canExportScope,
   downloadReportExport,
+  openSharedReport,
   saveReportPanelManagement,
   saveReportingConfiguration,
   useReportCatalog,
@@ -13,13 +15,19 @@ import {
 import type {
   ReportCapabilityCode,
   ReportConfiguration,
+  ReportExportFormat,
   ReportFilters,
   ReportPanelCode,
   ReportPanelManagement,
   ReportRow,
+  SharedReport,
 } from "./reporting-api";
+import { MyShareLinks, ReportShareControl, SharedReportNotice } from "./ReportShareLinks";
 import { PersonalReportingWorkspace } from "./PersonalReportingWorkspace";
 import { VisualDashboard } from "./ReportVisuals";
+
+// The token leaves the address bar on first read, so a link being opened survives a remount here.
+let pendingSharedReport: Promise<SharedReport> | null = null;
 
 type LocationChoice = { id: number; name: string; business_units: number[] };
 
@@ -108,7 +116,49 @@ export function ReportsArea({
   const [exportError, setExportError] = useState("");
   const [exportSuccess, setExportSuccess] = useState("");
   const [view, setView] = useState<"standard" | "visual">("standard");
+  const [shared, setShared] = useState<SharedReport | null>(null);
+  const [sharedError, setSharedError] = useState("");
+  const [shareRevision, setShareRevision] = useState(0);
   const visual = view === "visual";
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("shared_report");
+    if (token) {
+      // Drop the token from the address bar so it is not kept in history or copied on.
+      params.delete("shared_report");
+      const query = params.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+      pendingSharedReport = openSharedReport(token);
+    }
+    const pending = pendingSharedReport;
+    if (!pending) return;
+    let cancelled = false;
+    pending
+      .then((result) => {
+        if (cancelled) return;
+        pendingSharedReport = null;
+        const scope = result.filters.company ? `company:${result.filters.company}` : `unit:${result.filters.unit}`;
+        setView("standard");
+        setPanel(result.panel);
+        setPeriod(result.filters.period);
+        setStart(result.filters.start);
+        setEnd(result.filters.end);
+        setScopeKey(scope);
+        setLocation(result.filters.location ? String(result.filters.location) : "");
+        setLocationScopeKey(scope);
+        setShared(result);
+      })
+      .catch((reason: unknown) => {
+        if (cancelled) return;
+        pendingSharedReport = null;
+        setSharedError(reason instanceof Error ? reason.message : "The shared report could not be opened.");
+      });
+    // A remount (for example while the workspace settles) picks the pending link up again.
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (catalog.loading) return;
@@ -167,6 +217,7 @@ export function ReportsArea({
 
   const chosenUnitId = effectiveScopeKey.startsWith("unit:") ? Number(effectiveScopeKey.slice(5)) : null;
   const chosenCompanyId = effectiveScopeKey.startsWith("company:") ? Number(effectiveScopeKey.slice(8)) : null;
+  const canExport = canExportScope(catalog.data, chosenUnitId, chosenCompanyId);
   const locationOptions = useMemo(() => {
     if (!catalog.data || !panel) return [] as LocationChoice[];
     const scoped = requiredCapabilities.map(
@@ -221,7 +272,7 @@ export function ReportsArea({
     Boolean(!visual && panel === "sales" && effectiveScopeKey && !catalog.loading && !catalog.error),
   );
 
-  async function exportFile(format: "xlsx" | "docx") {
+  async function exportFile(format: ReportExportFormat) {
     if (!panel || exporting) return;
     setExportError("");
     setExportSuccess("");
@@ -256,6 +307,8 @@ export function ReportsArea({
       {!catalog.loading && !catalog.error && !catalog.data?.panels.length && (
         <div className="report-empty"><span className="report-empty-index">00</span><h3>No report panels assigned</h3><p>Ask a synthetic staff administrator to assign a report panel. Data access is granted separately.</p></div>
       )}
+
+      <SharedReportNotice shared={shared} error={sharedError} onDismiss={() => { setShared(null); setSharedError(""); }} />
 
       {canManagePanels && <div className="report-manage-link">
         <span>Panel visibility is managed separately from report data access.</span>
@@ -313,17 +366,20 @@ export function ReportsArea({
             <label className="report-field"><span>Through</span><input type="date" value={end} min={start} onChange={(event) => setEnd(event.target.value)} /></label>
           </div>
           {!scopeOptions.length && <div className="report-denial" role="status"><strong>No report-data scope assigned</strong><p>A panel assignment does not grant data access. Ask synthetic staff to grant an applicable capability and business-unit/company scope.</p></div>}
-          {visual && scopeOptions.length > 0 && <VisualDashboard panels={catalog.data.panels} filters={filters} />}
+          {visual && scopeOptions.length > 0 && <VisualDashboard panels={catalog.data.panels} filters={filters} csrfToken={csrfToken} />}
           {!visual && <>
           <div className="report-output">
             <div className="report-output-head">
               <div><span className="eyebrow">SERVER RESPONSE</span><h3>{report.data?.title ?? catalog.data.panels.find((item) => item.code === panel)?.label}</h3></div>
-              <div className="report-export-actions">
+              {canExport ? <div className="report-export-actions">
                 <button className="button button-outline" onClick={() => void exportFile("xlsx")} disabled={!report.data || Boolean(exporting)}>{exporting === "xlsx" ? "Preparing Excel…" : "Export Excel"}</button>
                 <button className="button button-outline" onClick={() => void exportFile("docx")} disabled={!report.data || Boolean(exporting)}>{exporting === "docx" ? "Preparing Word…" : "Export Word"}</button>
+                <button className="button button-outline" onClick={() => void exportFile("pdf")} disabled={!report.data || Boolean(exporting)}>{exporting === "pdf" ? "Preparing PDF…" : "Export PDF"}</button>
+                {panel && report.data && <ReportShareControl csrfToken={csrfToken} panel={panel} filters={filters} onCreated={() => setShareRevision((value) => value + 1)} />}
                 <small className="report-export-hint">Exports include all authorized rows, not only this page.</small>
-              </div>
+              </div> : <small className="report-export-hint report-export-none">Exporting and sharing need the separate export permission for this scope.</small>}
             </div>
+            {canExport && <MyShareLinks csrfToken={csrfToken} revision={shareRevision} />}
             {report.loading && <div className="report-skeleton report-data-skeleton" role="status" aria-label="Loading report data"><span /><span /><span /></div>}
             {!report.loading && report.error && <div className="report-denial" role="alert"><strong>Report data was not returned</strong><p>{report.error}</p><small>Access denials are shown without displaying report rows.</small><button className="button button-outline" type="button" onClick={report.refresh}>Retry report</button></div>}
             {!report.loading && !report.error && report.data && (

@@ -194,6 +194,9 @@ test("missing parents are not fetched inferred or inserted into the existing roo
   assert.equal(tree().querySelectorAll("li").length, firstLocations.length);
   assert.deepEqual(new Set(calls.map((call) => call.url.pathname)), new Set([
     "/api/auth/csrf/", "/api/auth/me/", "/api/organization/", "/api/favorites/", "/api/stock-balances/",
+    "/api/inventory/low-stock/",
+    // The Messages unread badge; it reads no location data.
+    "/api/chat/unread/",
   ]));
 });
 

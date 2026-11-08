@@ -126,6 +126,38 @@ class SupplierKycTests(PurchasingFixtureMixin, TestCase):
             ["opened", "document_added", "document_added", "submitted", "approved"],
         )
 
+    def test_supplier_brought_over_at_go_live_is_frozen_after_its_documents_deadline(self):
+        import datetime
+
+        from django.utils import timezone
+
+        supplier = SyntheticCounterparty.objects.create(party_type="supplier", code="TEST-SUP-IMPORTED-1",
+                                                        name="TEST ONLY Imported Timber")
+        today = timezone.localdate()
+        kyc = SupplierKyc.objects.create(
+            supplier=supplier, legal_name="Imported Timber", cr_number="CR-777", signatory_name="Test Signatory",
+            status="approved", opened_by=self.it, decided_by=self.manager, decided_at=timezone.now(),
+            documents_due=today + datetime.timedelta(days=1))
+        self.commit_to(supplier)
+        SupplierKyc.objects.filter(pk=kyc.pk).update(documents_due=today - datetime.timedelta(days=1))
+        with self.assertRaisesRegex(InvalidTransaction, "TEST-SUP-IMPORTED-1 is frozen: its KYC documents were due by"):
+            create_purchase_commitment(
+                actor=self.sales, idempotency_key="kyc-frozen-2", business_unit=self.unit, supplier=supplier,
+                lines=[{"variant": self.variant, "ordered_quantity": Decimal("1.00"), "unit_cost": Decimal("100.00")}])
+        from .supplier_advances import prepare_advance
+        UserActionGrant.objects.get_or_create(user=self.admin, business_unit=self.unit, action=Action.PAY_SUPPLIER)
+        with self.assertRaisesRegex(InvalidTransaction, "is frozen"):
+            prepare_advance(actor=self.admin, business_unit=self.unit, data={"supplier_id": supplier.pk, "amount": "100"})
+        self.attach(kyc.pk, "cr_certificate")
+        still = self.attach(kyc.pk, "signatory_id", PNG, "id.png")
+        self.assertEqual((still["status"], still["documents_due"], still["frozen"]), ("approved", None, False))
+        self.assertEqual(SupplierKycEvent.objects.filter(kyc=kyc).last().event, "documents_complete")
+        create_purchase_commitment(
+            actor=self.sales, idempotency_key="kyc-frozen-3", business_unit=self.unit, supplier=supplier,
+            lines=[{"variant": self.variant, "ordered_quantity": Decimal("1.00"), "unit_cost": Decimal("100.00")}])
+        with self.assertRaisesRegex(InvalidTransaction, "a draft or was rejected"):
+            self.attach(kyc.pk, "other")
+
     def test_rejection_needs_a_reason_and_a_corrected_file_can_be_resubmitted(self):
         kyc = self.ready_file()
         with self.assertRaisesRegex(InvalidTransaction, "reason"):

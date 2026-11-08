@@ -57,7 +57,7 @@ beforeEach(() => {
       detail = { ...detail, status: body.approve ? "approved" : "rejected", status_label: body.approve ? "Approved" : "Rejected", decided_by: person(4, "test_manager"), decided_at: row.opened_at, decision_note: body.note, can_decide: false };
       return json(detail);
     }
-    if (url === "/api/suppliers/kyc/" && method === "POST") return json({ ...detail, id: 8, status: "draft", can_edit: true, can_decide: false }, 201);
+    if (url === "/api/suppliers/kyc/" && method === "POST") return json({ ...detail, id: 8, status: "draft", can_edit: true, can_add_documents: true, can_decide: false }, 201);
     if (/\/api\/suppliers\/kyc\/\d+\/$/.test(url)) return json(detail);
     return json({
       permissions,
@@ -126,4 +126,15 @@ test("IT can open a new supplier and lands on its draft file", async () => {
   const created = requests.find((request) => request.url === "/api/suppliers/kyc/" && request.method === "POST");
   assert.equal((created?.body as { code: string }).code, "TEST-SUP-");
   assert.ok(container.querySelector(".kyc-file"));
+});
+
+test("a supplier brought over at go-live shows its documents deadline, and is frozen after it", async () => {
+  permissions = { can_open: true, can_approve: false };
+  detail = { ...detail, status: "approved", status_label: "Approved", documents_due: "2027-02-02", frozen: false, can_add_documents: true,
+    can_decide: false, missing_documents: [{ kind: "signatory_id", label: "Signatory ID" }] };
+  await mount();
+  await click(button("Doha Timber Trading WLL"));
+  assert.match(container.querySelector(".kyc-missing")?.textContent ?? "", /Brought over at go-live\. Attach these by 2 Feb 2027 or the supplier is frozen: Signatory ID\./);
+  assert.ok(container.querySelector("form[aria-label='Attach a document']"), "Documents can still be attached to an approved, imported supplier");
+  assert.match(container.querySelector(".kyc-due")?.textContent ?? "", /Documents due 2 Feb 2027/);
 });

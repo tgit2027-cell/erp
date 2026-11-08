@@ -11,16 +11,16 @@ from django.test import TestCase, override_settings
 
 
 class MediaStorageInventoryTests(TestCase):
-    def test_only_supplier_kyc_documents_store_uploaded_files(self):
+    def test_only_kyc_documents_and_item_photos_store_uploaded_files(self):
         file_fields = [
             f"{model.__name__}.{field.name}"
             for model in apps.get_app_config("foundation").get_models()
             for field in model._meta.get_fields()
             if isinstance(field, FileField)
         ]
-        # Supplier KYC attachments are the only uploads; they live under DJANGO_MEDIA_ROOT
-        # and are covered by the media archive in the backup bundle.
-        self.assertEqual(file_fields, ["SupplierKycDocument.file"])
+        # Supplier KYC attachments and item photos are the only uploads; both live under
+        # DJANGO_MEDIA_ROOT and are covered by the media archive in the backup bundle.
+        self.assertEqual(sorted(file_fields), ["Expense.receipt", "Item.photo", "SupplierKycDocument.file"])
 
 
 class SnapshotIntegrityCommandTests(TestCase):

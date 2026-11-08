@@ -6,6 +6,7 @@ import {
 } from "./reporting-api";
 import type {
   ReportData,
+  ReportExportFormat,
   ReportFilters,
   ReportPanelCode,
 } from "./reporting-api";
@@ -115,7 +116,7 @@ function WorkspacePanel({
     if (clearedAfterExportError && !report.loading && report.data && !report.error) setClearedAfterExportError(false);
   }, [clearedAfterExportError, report.loading, report.data, report.error]);
 
-  async function exportPanel(format: "xlsx" | "docx") {
+  async function exportPanel(format: ReportExportFormat) {
     setExportError("");
     setExporting(format);
     try {
@@ -145,6 +146,7 @@ function WorkspacePanel({
         <div className="personal-view-panel-actions">
           <button type="button" className="button button-outline" onClick={() => void exportPanel("xlsx")} disabled={!displayed || Boolean(exporting)}>Export Excel</button>
           <button type="button" className="button button-outline" onClick={() => void exportPanel("docx")} disabled={!displayed || Boolean(exporting)}>Export Word</button>
+          <button type="button" className="button button-outline" onClick={() => void exportPanel("pdf")} disabled={!displayed || Boolean(exporting)}>Export PDF</button>
         </div>
       </header>
       {report.loading && <div className="personal-view-skeleton" role="status" aria-label={`Loading ${panel.replaceAll("_", " ")} report`}><i /><i /><i /></div>}

@@ -226,7 +226,7 @@ class Command(BaseCommand):
 
         data_grants = 0
         for unit_code, unit in units.items():
-            for capability in (ReportDataCapability.SALES, ReportDataCapability.BUDGETS):
+            for capability in (ReportDataCapability.SALES, ReportDataCapability.BUDGETS, ReportDataCapability.EXPORT):
                 if self._ensure_data_grant(
                     admin,
                     role=manager_role,

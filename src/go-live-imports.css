@@ -1,0 +1,34 @@
+.go-live-imports .sp-status-waiting { border-color: #8a5a00; color: #8a5a00; }
+.go-live-imports .sp-status-done { color: var(--muted); }
+.gi-fields { align-items: end; }
+.gi-template { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-start; font-size: 12px; }
+.gi-template .button { display: inline-flex; align-items: center; text-decoration: none; }
+.gi-sample td, .gi-table .gi-sample td { white-space: nowrap; }
+.gi-template details { flex: 1 1 280px; }
+.gi-template ul { columns: 2 320px; column-gap: 24px; }
+.gi-template li { break-inside: avoid; }
+.gi-template ul { margin: 6px 0 0; padding-left: 16px; color: var(--muted); line-height: 1.5; }
+.gi-template summary, .gi-peek summary { cursor: pointer; color: var(--ink); }
+.gi-result { display: grid; gap: 8px; }
+.gi-result h4 { margin: 4px 0 0; font-size: 12px; }
+.gi-verdict { margin: 0; padding: 8px 10px; font-size: 12px; border-left: 3px solid; }
+.gi-verdict-good { border-color: #2f6b45; background: #eef6ef; }
+.gi-verdict-bad { border-color: #9b392f; background: #fbecea; }
+.gi-problems ul { margin: 0; padding-left: 16px; }
+.gi-problems td:first-child, .gi-sample td:first-child { width: 48px; }
+.gi-heading { margin: 6px 0 0; font-size: 14px; }
+.gi-table td, .gi-table th { vertical-align: top; white-space: normal; }
+.gi-table td small, .gi-table th small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.gi-table td:last-child { width: 62%; }
+.gi-peek { margin-top: 6px; font-size: 12px; }
+.gi-peek .sp-table { min-width: 0; }
+.gi-inline { flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+.gi-inline input { min-height: 30px; font-size: 12px; }
+.gi-table .lv-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+@media (prefers-color-scheme: dark) {
+  .gi-verdict-good { background: transparent; }
+  .gi-verdict-bad { background: transparent; }
+}
+.gi-left { padding: 8px 10px; border-left: 3px solid #8a5a00; background: #fff7e3; font-size: 12px; }
+.gi-left span { display: block; margin-top: 2px; color: var(--muted); }
+@media (prefers-color-scheme: dark) { .gi-left { background: transparent; } }

@@ -24,6 +24,10 @@ const tivoli = tokensIn(":root");
 const roche = tokensIn(':root[data-unit-theme="roche"]');
 const natuzzi = tokensIn(':root[data-unit-theme="natuzzi"]');
 const slate = tokensIn(':root[data-unit-theme="slate"]');
+// Area colours (Sam, 6 Nov 2026): Factory brown, Warehouse and Logistics yellow, HR purple.
+const factory = tokensIn(':root[data-area-theme="factory"]');
+const warehouse = tokensIn(':root[data-area-theme="warehouse"]');
+const hr = tokensIn(':root[data-area-theme="hr"]');
 
 function color(hex) {
   const normalized = hex.slice(1);
@@ -59,7 +63,7 @@ assert.match(deliveryPreparationCss, /input:focus-visible \+ \.dp-check-box/);
 requireRatio("Delivery preparation body on paper", "#28352f", "#fffefa", 4.5);
 requireRatio("Delivery preparation muted text on paper", "#68766e", "#fffefa", 4.5);
 requireRatio("Delivery preparation reviewed text", "#3c4d42", "#fbfaf5", 4.5);
-for (const [name, palette] of Object.entries({ tivoli, roche, natuzzi, slate })) {
+for (const [name, palette] of Object.entries({ tivoli, roche, natuzzi, slate, factory, warehouse, hr })) {
   requireRatio(`Delivery preparation ${name} accent on paper`, palette["--brand-deep"], "#fffefa", 4.5);
   requireRatio(`Delivery preparation ${name} focus on paper`, palette["--brand"], "#fffefa", 3);
 }
@@ -87,14 +91,29 @@ requireRatio("Tivoli purchasing focus ring on tinted surface", tivoli["--brand"]
 
 const expectedPalettes = {
   roche: {
-    "--brand": "#426D8B", "--brand-deep": "#315872", "--brand-soft": "#E8F1F6",
-    "--brand-mid": "#3B6380", "--sidebar": "#263F50", "--sidebar-muted": "#B7CBD7",
-    "--focus": "#6394B2", "--green": "#426D8B", "--line": "#DCE6EC", "--sand": "#F1F5F7",
+    "--brand": "#2F6AA3", "--brand-deep": "#265582", "--brand-soft": "#E4EEF8",
+    "--brand-mid": "#285A8B", "--sidebar": "#0C1C2A", "--sidebar-muted": "#C9D8E7",
+    "--focus": "#2F6AA3", "--green": "#2F6AA3", "--line": "#D3E1EE", "--sand": "#F3F7FB",
   },
   natuzzi: {
-    "--brand": "#806343", "--brand-deep": "#654B32", "--brand-soft": "#F2ECE4",
-    "--brand-mid": "#745838", "--sidebar": "#473A2E", "--sidebar-muted": "#C9B9A4",
-    "--focus": "#A9855F", "--green": "#806343", "--line": "#E8E0D6", "--sand": "#F6F3EE",
+    "--brand": "#2E7D4F", "--brand-deep": "#25643F", "--brand-soft": "#E2F1E7",
+    "--brand-mid": "#276A43", "--sidebar": "#0C2115", "--sidebar-muted": "#C9DDD1",
+    "--focus": "#2E7D4F", "--green": "#2E7D4F", "--line": "#D0E5D7", "--sand": "#F3F8F4",
+  },
+  factory: {
+    "--brand": "#7A4A2A", "--brand-deep": "#623B22", "--brand-soft": "#F3E8DF",
+    "--brand-mid": "#683F24", "--sidebar": "#20130B", "--sidebar-muted": "#DCD0C8",
+    "--focus": "#7A4A2A", "--green": "#7A4A2A", "--line": "#E5D5C8", "--sand": "#F9F5F1",
+  },
+  warehouse: {
+    "--brand": "#946600", "--brand-deep": "#7B5500", "--brand-soft": "#FBF0CF",
+    "--brand-mid": "#835A00", "--sidebar": "#281C00", "--sidebar-muted": "#E5D8BD",
+    "--focus": "#946600", "--green": "#946600", "--line": "#EFDFAE", "--sand": "#FDF9EB",
+  },
+  hr: {
+    "--brand": "#6E46A8", "--brand-deep": "#583886", "--brand-soft": "#EEE6F8",
+    "--brand-mid": "#5E3C8F", "--sidebar": "#1D122C", "--sidebar-muted": "#D9CFE8",
+    "--focus": "#6E46A8", "--green": "#6E46A8", "--line": "#DED1EF", "--sand": "#F8F5FC",
   },
   slate: {
     "--brand": "#4C6474", "--brand-deep": "#344C5C", "--brand-soft": "#EAF0F3",
@@ -105,7 +124,7 @@ const expectedPalettes = {
 
 const workspaceCss = readFileSync(new URL("../src/personal-reporting-workspace.css", import.meta.url), "utf8");
 assert.match(workspaceCss, /:focus-visible\s*\{\s*outline:\s*2px solid var\(--brand\)/);
-for (const [name, palette] of Object.entries({ tivoli, roche, natuzzi, slate })) {
+for (const [name, palette] of Object.entries({ tivoli, roche, natuzzi, slate, factory, warehouse, hr })) {
   const ink = tivoli["--ink"];
   const muted = tivoli["--muted"];
   requireRatio(`${name} workspace body on white`, ink, "#FFFFFF", 4.5);
@@ -119,7 +138,7 @@ for (const [name, palette] of Object.entries({ tivoli, roche, natuzzi, slate }))
 requireRatio("Workspace unavailable/error text on error surface", "#854A3F", "#FBF0EB", 4.5);
 
 for (const [name, expected] of Object.entries(expectedPalettes)) {
-  const actual = { roche, natuzzi, slate }[name];
+  const actual = { roche, natuzzi, slate, factory, warehouse, hr }[name];
   for (const [token, value] of Object.entries(expected)) {
     assert.equal(actual[token], value, `${name} ${token} token changed`);
   }
@@ -170,7 +189,7 @@ console.log("PASS Tivoli monogram colors remain fixed across business-unit theme
 const preparationCss = readFileSync(new URL("../src/packing-receipt-preparation.css", import.meta.url), "utf8");
 assert.match(preparationCss, /color-mix\(in srgb, var\(--brand-soft\) 24%, var\(--paper\)\)/);
 for (const [name, palette] of Object.entries({
-  tivoli, roche, natuzzi, slate, custom: generatedCustomPalette,
+  tivoli, roche, natuzzi, slate, factory, warehouse, hr, custom: generatedCustomPalette,
 })) {
   const surface = `#${color(palette["--brand-soft"]).map((channel) =>
     Math.round((channel * 0.24 + 0.76) * 255).toString(16).padStart(2, "0"),
@@ -183,7 +202,7 @@ for (const [name, palette] of Object.entries({
 const navigationCss = readFileSync(new URL("../src/section-navigation.css", import.meta.url), "utf8");
 assert.match(navigationCss, /outline:\s*2px solid var\(--sidebar-muted\)/);
 for (const [name, palette] of Object.entries({
-  tivoli, roche, natuzzi, slate, custom: generatedCustomPalette,
+  tivoli, roche, natuzzi, slate, factory, warehouse, hr, custom: generatedCustomPalette,
 })) {
   const sidebar = palette["--sidebar"];
   const muted = palette["--sidebar-muted"];
@@ -202,7 +221,7 @@ const returnCss = readFileSync(new URL("../src/purchasing-workbench.css", import
 assert.match(returnCss, /\.pw-return-index[^}]+background: var\(--brand\)/);
 assert.match(returnCss, /\.pw-return-banner strong[^}]+color: var\(--brand-deep\)/);
 for (const [name, palette] of Object.entries({
-  tivoli, roche, natuzzi, slate, custom: generatedCustomPalette,
+  tivoli, roche, natuzzi, slate, factory, warehouse, hr, custom: generatedCustomPalette,
 })) {
   const tint = `#${color(palette["--brand-soft"]).map((channel) =>
     Math.round((channel * 0.45 + 0.55) * 255).toString(16).padStart(2, "0"),
@@ -219,7 +238,7 @@ assert.doesNotMatch(inventoryCss, /var\(--sidebar-muted\)/,
 assert.match(inventoryCss, /\.inventory-bucket-fields dt,[^{]+\{\s*color:\s*var\(--muted\)/);
 console.log("PASS Inventory light-surface labels use the content-muted contrast token");
 for (const [name, palette] of Object.entries({
-  tivoli, roche, natuzzi, slate, custom: generatedCustomPalette,
+  tivoli, roche, natuzzi, slate, factory, warehouse, hr, custom: generatedCustomPalette,
 })) {
   requireRatio(`${name} Inventory muted labels on white`, tivoli["--muted"], "#FFFFFF", 4.5);
   requireRatio(`${name} Inventory muted labels on tinted surface`, tivoli["--muted"], palette["--sand"], 4.5);
@@ -235,7 +254,7 @@ assert.match(collectionsCss, /--rc-accent:\s*var\(--brand-deep/);
 assert.doesNotMatch(collectionsCss, /#f8ebdd|#6f3000/i,
   "Collection surfaces and hover states must follow the selected unit palette");
 for (const [name, palette] of Object.entries({
-  tivoli, roche, natuzzi, slate, custom: generatedCustomPalette,
+  tivoli, roche, natuzzi, slate, factory, warehouse, hr, custom: generatedCustomPalette,
 })) {
   requireRatio(`${name} collection body text on unit tint`, tivoli["--ink"], palette["--brand-soft"], 4.5);
   requireRatio(`${name} collection caveat text on unit tint`, "#4F5B53", palette["--brand-soft"], 4.5);

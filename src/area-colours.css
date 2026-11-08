@@ -1,0 +1,30 @@
+/*
+ * Each area's own colour on the landing-page tiles (Sam, 6 Nov 2026).
+ * Tivoli orange, Roche Bobois blue, Natuzzi green, Factory brown, Warehouse
+ * and Logistics yellow, HR purple. Projects & Fit-Out (crimson) and Smart
+ * (teal) are provisional picks. Finance, Purchasing and ERP setup are shared
+ * across showrooms, so their tiles stay neutral grey.
+ * The full page colours for each area live in style.css (data-area-theme).
+ */
+.area-tile[data-area] { --area-colour: var(--brand, #b24f00); }
+.area-tile[data-area="furniture"] { --area-colour: #b24f00; }
+.area-tile[data-area="roche-bobois"] { --area-colour: #2f6aa3; }
+.area-tile[data-area="natuzzi"] { --area-colour: #2e7d4f; }
+.area-tile[data-area="factory"] { --area-colour: #7a4a2a; }
+.area-tile[data-area="warehouse"],
+.area-tile[data-area="logistics"] { --area-colour: #946600; }
+.area-tile[data-area="hr"] { --area-colour: #6e46a8; }
+.area-tile[data-area="projects"] { --area-colour: #a8324a; }
+.area-tile[data-area="smart"] { --area-colour: #0f766e; }
+.area-tile[data-area="finance"],
+.area-tile[data-area="purchasing"],
+.area-tile[data-area="setup"] { --area-colour: #5b6b7a; }
+
+.area-grid .area-tile[data-area] { border-left-color: var(--area-colour); }
+.area-grid .area-tile[data-area]:hover:not(:disabled),
+.area-grid .area-tile[data-area]:focus-visible { border-color: var(--area-colour); }
+.area-grid .area-tile[data-area].area-current { outline-color: var(--area-colour); }
+.area-grid .area-tile[data-area] .area-mark {
+  background: color-mix(in srgb, var(--area-colour) 13%, white);
+  color: color-mix(in srgb, var(--area-colour) 82%, black);
+}

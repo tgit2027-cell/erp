@@ -15,6 +15,8 @@ type FileRow = {
   submitted_at: string | null;
   decided_by: Person;
   decided_at: string | null;
+  documents_due: string | null;
+  frozen: boolean;
 };
 type Overview = {
   permissions: { can_open: boolean; can_approve: boolean };
@@ -35,6 +37,7 @@ type Detail = FileRow & {
   documents: { id: number; kind: string; kind_label: string; name: string; size: number; uploaded_by: string; uploaded_at: string }[];
   history: { event: string; actor: string; note: string; at: string }[];
   can_edit: boolean;
+  can_add_documents: boolean;
   can_decide: boolean;
 };
 type Form = {
@@ -57,7 +60,15 @@ const FILTERS = [
 const EVENTS: Record<string, string> = {
   opened: "Opened", edited: "Edited", reopened: "Corrected after rejection", document_added: "Document attached",
   submitted: "Sent for approval", approved: "Approved", rejected: "Rejected",
+  imported: "Brought over at go-live", documents_complete: "All documents attached",
 };
+const dueDate = (value: string) => new Date(`${value}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+function DocumentsDue({ row }: { row: FileRow }) {
+  if (!row.documents_due) return null;
+  return row.frozen
+    ? <span className="kyc-status kyc-frozen">Frozen: documents were due {dueDate(row.documents_due)}</span>
+    : <span className="kyc-status kyc-due">Documents due {dueDate(row.documents_due)}</span>;
+}
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, { ...init, credentials: "same-origin" });
@@ -166,6 +177,7 @@ function SupplierFile({ id, kinds, csrfToken, onBack, onChanged }: {
           <span className="eyebrow">SUPPLIER FILE{detail ? ` · ${detail.supplier.code}` : ""}</span>
           <h3 id="kyc-file-title">{detail?.legal_name ?? "Loading…"}</h3>
           {detail && <span className={`kyc-status kyc-${detail.status}`}>{detail.status_label}</span>}
+          {detail && <> <DocumentsDue row={detail} /></>}
         </div>
         <button className="button button-outline" type="button" onClick={onBack}>Back to all suppliers</button>
       </header>
@@ -191,14 +203,16 @@ function SupplierFile({ id, kinds, csrfToken, onBack, onChanged }: {
             onClick={() => void run(() => call<Detail>(`/api/suppliers/kyc/${id}/submit/`, json("POST", {})))}>Send for approval</button>}
         </div>}
         <h4>Documents</h4>
-        {detail.missing_documents.length > 0 && <p className="kyc-missing" role="status">Still needed before approval: {detail.missing_documents.map((item) => item.label).join(", ")}.</p>}
+        {detail.missing_documents.length > 0 && <p className="kyc-missing" role="status">{detail.documents_due
+          ? `${detail.frozen ? "This supplier is frozen: no new orders or payments until these are attached" : `Brought over at go-live. Attach these by ${dueDate(detail.documents_due)} or the supplier is frozen`}: ${detail.missing_documents.map((item) => item.label).join(", ")}.`
+          : `Still needed before approval: ${detail.missing_documents.map((item) => item.label).join(", ")}.`}</p>}
         {detail.documents.length === 0 ? <p className="kyc-empty">No documents attached yet.</p> : <ul className="kyc-documents">
           {detail.documents.map((document) => <li key={document.id}>
             <a href={`/api/suppliers/kyc/${id}/documents/${document.id}/`}>{document.name}</a>
             <span>{document.kind_label} · {kilobytes(document.size)} · {document.uploaded_by} · {when(document.uploaded_at)}</span>
           </li>)}
         </ul>}
-        {detail.can_edit && <form className="kyc-upload" onSubmit={upload} aria-label="Attach a document">
+        {detail.can_add_documents && <form className="kyc-upload" onSubmit={upload} aria-label="Attach a document">
           <label>Document<select value={kind} onChange={(event) => setKind(event.target.value)}>
             {kinds.map((item) => <option key={item.kind} value={item.kind}>{item.label}</option>)}
           </select></label>
@@ -288,7 +302,7 @@ export default function SupplierKyc({ csrfToken }: { csrfToken: string }) {
             <th scope="row"><button type="button" className="kyc-link" onClick={() => setSelected(row.id)}>{row.legal_name}</button><small className="pw-mono">{row.supplier.code}</small></th>
             <td className="pw-mono">{row.cr_number}</td>
             <td className="pw-mono">{row.vat_number || "—"}</td>
-            <td><span className={`kyc-status kyc-${row.status}`}>{row.status_label}</span></td>
+            <td><span className={`kyc-status kyc-${row.status}`}>{row.status_label}</span>{row.documents_due && <> <DocumentsDue row={row} /></>}</td>
             <td>{row.opened_by?.name}<small>{when(row.opened_at)}</small></td>
             <td>{row.decided_by ? <>{row.decided_by.name}<small>{when(row.decided_at)}</small></> : "—"}</td>
           </tr>)}</tbody>

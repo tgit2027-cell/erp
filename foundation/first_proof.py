@@ -82,11 +82,11 @@ def run_first_proof(*, admin):
     )
     customer, _ = SyntheticCounterparty.objects.get_or_create(
         party_type=SyntheticCounterparty.Type.CUSTOMER, code="TEST-CUST-PROOF-1",
-        defaults={"name": "TEST ONLY Al Waab family"},
+        defaults={"name": "TEST ONLY Al Waab family", "qid": "29963400101"},
     )
     held_customer, _ = SyntheticCounterparty.objects.get_or_create(
         party_type=SyntheticCounterparty.Type.CUSTOMER, code="TEST-CUST-PROOF-2",
-        defaults={"name": "TEST ONLY Lusail apartment"},
+        defaults={"name": "TEST ONLY Lusail apartment", "qid": "29963400102"},
     )
     steps = []
 

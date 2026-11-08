@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from .models import CustomerInvoice
 from .pagination import page_metadata, parse_page_parameters
 from .purchasing_views import _purchasing_unit_for_user, _query_id
+from .quotation_presentation import item_presentation
 
 MONEY_FIELDS = (
     "list_total", "discount_total", "net_total", "tax_rate_percent", "tax_total",
@@ -41,6 +42,7 @@ def _detail(invoice):
             "item_code": line.item_code,
             "description": line.description,
             "brand_name": line.brand_name,
+            "image_path": item_presentation(line.quote_line.variant.item)["image_path"],
             "quantity": format(line.quantity, ".2f"),
             "list_unit_price": format(line.list_unit_price, ".2f"),
             "discount_percent": format(line.discount_percent, ".2f"),
@@ -91,7 +93,7 @@ class CustomerInvoiceDetailView(APIView):
         )
         invoice = get_object_or_404(
             CustomerInvoice.objects.select_related("business_unit", "customer", "issued_by")
-            .prefetch_related("lines__journal_entries"),
+            .prefetch_related("lines__journal_entries", "lines__quote_line__variant__item"),
             pk=invoice_id, business_unit=unit, is_synthetic=True,
         )
         return Response(_detail(invoice))

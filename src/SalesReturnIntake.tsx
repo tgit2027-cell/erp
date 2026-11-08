@@ -42,7 +42,7 @@ type SalesReturn = {
   request_date: string;
   customer: { id: number; name: string };
   business_unit: { id: number; code: string; name: string };
-  status: "awaiting_inspection" | "finance_pending";
+  status: "awaiting_inspection" | "finance_pending" | "refunded" | "rejected";
   receiving_mode: "showroom" | "warehouse_collection";
   location: { id: number; code: string; name: string };
   receipt_collection_details: string;
@@ -378,7 +378,7 @@ export default function SalesReturnIntake({ selectedUnitId, username, csrfToken 
       <div className="pw-return-banner">
         <span className="pw-return-index">SR</span>
         <div><strong>TEST ONLY · SYNTHETIC SALES-RETURN INTAKE</strong>
-          <p>No refund, credit, stock movement or accounting entry is created here. The server-provided delivery-window assessment does not approve a refund.</p></div>
+          <p>No refund, credit, stock movement or accounting entry is created here. Finance decides the refund afterwards under Finance · Customer refunds. The server-provided delivery-window assessment does not approve a refund.</p></div>
         <span className="pw-status is-off">Finance review required</span>
       </div>
       <div className="pw-return-layout">
@@ -516,7 +516,9 @@ export default function SalesReturnIntake({ selectedUnitId, username, csrfToken 
             <strong>Stored delivery-window assessment</strong>
             <p>Delivered {selectedReturn.delivery_window.delivery_date ? formatDate(selectedReturn.delivery_window.delivery_date) : "not recorded"} · Deadline {selectedReturn.delivery_window.deadline ? formatDate(selectedReturn.delivery_window.deadline) : "not recorded"} · Requested {selectedReturn.delivery_window.request_date ? formatDate(selectedReturn.delivery_window.request_date) : formatDate(selectedReturn.request_date)} · {selectedReturn.delivery_window.eligible === true ? "Eligible under stored assessment." : selectedReturn.delivery_window.message || "Eligibility unavailable; record is fail-closed."}</p>
           </div>}
-          {selectedReturn.status === "finance_pending" && <div className="pw-notice pw-success"><strong>Pending authorized Finance review</strong><p>No refund, credit, disposition or stock action is authorized or performed here.</p></div>}
+          {selectedReturn.status === "finance_pending" && <div className="pw-notice pw-success"><strong>Pending authorized Finance review</strong><p>No refund, credit, disposition or stock action is authorized or performed here. Finance decides it under Finance · Customer refunds.</p></div>}
+          {selectedReturn.status === "refunded" && <div className="pw-notice pw-success"><strong>Refunded by Finance</strong><p>A credit note was issued and the goods were put back into stock.</p></div>}
+          {selectedReturn.status === "rejected" && <div className="pw-notice pw-error"><strong>Refund rejected by Finance</strong><p>Nothing was posted. The reason is shown under Finance · Customer refunds.</p></div>}
           {selectedReturn.status === "awaiting_inspection" && selectedReturn.delivery_window?.eligible !== true && <div className="pw-disabled-reason" role="alert">Inspection is unavailable because this stored return is not confirmed eligible. Eligibility alone does not approve a refund; inspection and Finance review remain required.</div>}
           <form className="pw-action-form" onSubmit={(event) => void submitInspection(event)}>
             {selectedReturn.lines.map((line) => <div className="pw-return-inspection-line" key={line.quote_line_id}>

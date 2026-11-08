@@ -10,6 +10,9 @@ const nativeFetch = globalThis.fetch;
 let container: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 let calls: URL[];
+let layout: { panels: string[]; customized: boolean; assigned: string[] } | null;
+let saved: Array<{ method: string; body: unknown }>;
+let exportScope: typeof empty;
 
 const unitScope = { business_units: [{ id: 3, code: "TVL", name: "Tivoli" }], companies: [], locations: [] };
 const empty = { business_units: [], companies: [], locations: [] };
@@ -17,7 +20,7 @@ const catalog = {
   panels: [{ code: "sales", label: "Sales" }, { code: "gross_margin", label: "Gross margin" }],
   scopes: {
     sales: unitScope, category_sales: empty, supplier_cost: empty, landed_cost: empty, gross_margin: empty,
-    expenses: empty, inventory: empty, purchase_history: empty, transfer_history: empty, budgets: empty,
+    expenses: empty, inventory: empty, purchase_history: empty, transfer_history: empty, budgets: empty, export: empty,
   },
 };
 const marginChart: VisualChart = {
@@ -54,10 +57,23 @@ beforeEach(() => {
   document.body.append(container);
   root = createRoot(container);
   calls = [];
-  globalThis.fetch = (async (input: RequestInfo | URL) => {
+  layout = null;
+  saved = [];
+  exportScope = empty;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input), "http://localhost");
     calls.push(url);
-    if (url.pathname === "/api/reports/") return json(catalog);
+    if (url.pathname === "/api/reports/") return json({ ...catalog, scopes: { ...catalog.scopes, export: exportScope } });
+    if (url.pathname === "/api/reports/dashboard-layout/") {
+      const method = init?.method ?? "GET";
+      if (method === "GET") return layout ? json(layout) : json({ detail: "not set" }, 404);
+      const body = init?.body ? JSON.parse(String(init.body)) : null;
+      saved.push({ method, body });
+      layout = method === "DELETE"
+        ? { panels: ["sales", "gross_margin"], customized: false, assigned: ["sales", "gross_margin"] }
+        : { panels: body.panels, customized: true, assigned: ["sales", "gross_margin"] };
+      return json(layout);
+    }
     if (url.pathname === "/api/reports/sales/visual/") return json(salesVisual);
     if (url.pathname === "/api/reports/gross_margin/visual/") return json({ detail: "No gross margin data is granted for this scope." }, 403);
     if (url.pathname === "/api/report-views/") return json({ views: [], panels: [] });
@@ -109,4 +125,51 @@ test("the visual dashboard loads every assigned panel with the chosen scope and 
   assert.equal(sales.querySelectorAll(".viz-chart").length, 2);
   assert.match(container.querySelector("[data-visual-panel=gross_margin] .viz-denied")?.textContent ?? "", /No gross margin data/);
   assert.equal(calls.slice(before).some((url) => url.pathname === "/api/reports/sales/"), false, "The standard report is not fetched in visual mode");
+});
+
+async function openDashboard() {
+  act(() => root.render(<ReportsArea csrfToken="TEST-ONLY" selectedUnitId={3} canManagePanels={false} />));
+  await flush();
+  const toggle = [...container.querySelectorAll(".report-view-toggle button")] as HTMLButtonElement[];
+  await act(async () => { toggle[1].click(); });
+  await flush();
+}
+const shownPanels = () => [...container.querySelectorAll("[data-visual-panel]")].map((node) => node.getAttribute("data-visual-panel"));
+const button = (text: string) => [...container.querySelectorAll("button")].find((item) => item.textContent === text) as HTMLButtonElement;
+
+test("a user's saved layout decides which assigned panels show and in what order", async () => {
+  layout = { panels: ["gross_margin", "sales"], customized: true, assigned: ["sales", "gross_margin"] };
+  await openDashboard();
+  assert.deepEqual(shownPanels(), ["gross_margin", "sales"]);
+
+  await act(async () => { button("Customize dashboard").click(); });
+  const rows = [...container.querySelectorAll(".viz-customize li")];
+  assert.deepEqual(rows.map((row) => row.textContent?.replace(/[↑↓]/g, "")), ["Gross margin", "Sales"]);
+  await act(async () => { (container.querySelector('[aria-label="Move Sales up"]') as HTMLButtonElement).click(); });
+  await act(async () => { (container.querySelectorAll(".viz-customize input")[1] as HTMLInputElement).click(); });
+  await act(async () => { button("Save layout").click(); });
+  await flush();
+  assert.deepEqual(saved, [{ method: "PUT", body: { panels: ["sales"] } }]);
+  assert.deepEqual(shownPanels(), ["sales"]);
+  assert.equal(container.querySelector(".viz-customize"), null);
+
+  await act(async () => { button("Customize dashboard").click(); });
+  await act(async () => { button("Show all panels").click(); });
+  await flush();
+  assert.equal(saved.at(-1)?.method, "DELETE");
+  assert.deepEqual(shownPanels(), ["sales", "gross_margin"]);
+});
+
+test("export buttons appear only where the separate export permission covers the scope", async () => {
+  act(() => root.render(<ReportsArea csrfToken="TEST-ONLY" selectedUnitId={3} canManagePanels={false} />));
+  await flush();
+  assert.equal(button("Export Excel"), undefined);
+  assert.match(container.textContent ?? "", /Exporting and sharing need the separate export permission/);
+  act(() => root.unmount());
+  root = createRoot(container);
+  exportScope = unitScope;
+  act(() => root.render(<ReportsArea csrfToken="TEST-ONLY" selectedUnitId={3} canManagePanels={false} />));
+  await flush();
+  assert.ok(button("Export Excel"));
+  assert.ok(button("Export Word"));
 });

@@ -84,7 +84,7 @@ export default function SectionNavigation({
                 onClick={() => toggleSection(section.id)}
                 onKeyDown={(event) => handleSectionKeyDown(event, section.id)}
               >
-                <span className="nav-icon nav-number" aria-hidden="true">{section.icon}</span>
+                <span className="nav-icon nav-number" data-section={section.id} aria-hidden="true">{section.icon}</span>
                 <span className="nav-section-name">{section.name}</span>
                 <span className="section-navigation-chevron" aria-hidden="true" />
               </button>

@@ -1,0 +1,25 @@
+.stock-value { display: grid; gap: 14px; }
+.sv-quick { display: flex; gap: 6px; align-items: end; }
+.sv-quick .button { margin-top: 0; min-height: 34px; }
+.sv-quick .button[aria-pressed="true"] { background: var(--ink); color: white; border-color: var(--ink); }
+.stock-value .bc-buttons a.button { margin-top: 0; min-height: 34px; display: inline-flex; align-items: center; padding: 0 14px; text-decoration: none; }
+.stock-value .sp-totals dd small { display: block; margin-top: 3px; font-size: 11px; font-weight: 600; }
+.sv-agrees { color: #2f6b45; }
+.sv-differs { color: #9b392f; }
+.sv-note { margin: 0; padding: 8px 10px; border-left: 3px solid #8a5a12; background: #fbf3e4; font-size: 12px; max-width: 820px; }
+.sv-tabs { display: inline-flex; border: 1px solid var(--ink); justify-self: start; }
+.sv-tabs button { min-height: 35px; padding: 0 16px; border: 0; background: white; color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.sv-tabs button[aria-pressed="true"] { background: var(--ink); color: white; }
+.sv-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; text-align: left; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.sv-link:focus-visible, .sv-tabs button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.sv-chosen th, .sv-chosen td { background: var(--sand); }
+.sv-groups tfoot th, .sv-groups tfoot td { border-top: 2px solid var(--ink); font-weight: 700; }
+.sv-share { display: inline-block; width: 120px; height: 8px; margin-right: 8px; background: #ece7de; vertical-align: middle; border-radius: 4px; overflow: hidden; }
+.sv-bar { display: block; height: 100%; background: #4a5a8c; border-radius: 0 4px 4px 0; }
+.sv-pct { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sv-lines-title { margin: 4px 0 0; font: 700 15px var(--font-display); }
+.sv-lines-title small { margin-left: 6px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.stock-value .sp-table { min-width: 720px; }
+.stock-value .sp-table td, .stock-value .sp-table th { white-space: normal; }
+.stock-value .sp-table .bc-num { white-space: nowrap; }
+.sv-where { min-width: 180px; max-width: 280px; }
